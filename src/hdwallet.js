@@ -159,13 +159,12 @@ export class SikkaHDWallet {
 
         if (info.unspentOutputs) {
           for (const utxo of info.unspentOutputs) {
-            if (utxo.created_at && (now < Number(utxo.created_at) + MIN_UTXO_MATURITY_SECONDS)) {
-              continue; // Skip immature UTXO (< 10 min old)
-            }
+            const isImmature = utxo.created_at && (now < Number(utxo.created_at) + MIN_UTXO_MATURITY_SECONDS);
             allUtxos.push({
               ...utxo,
               address: wallet.address,
-              walletObj: wallet
+              walletObj: wallet,
+              isImmature: Boolean(isImmature)
             });
           }
         }
@@ -200,13 +199,12 @@ export class SikkaHDWallet {
 
         if (info.unspentOutputs) {
           for (const utxo of info.unspentOutputs) {
-            if (utxo.created_at && (now < Number(utxo.created_at) + MIN_UTXO_MATURITY_SECONDS)) {
-              continue; // Skip immature UTXO (< 10 min old)
-            }
+            const isImmature = utxo.created_at && (now < Number(utxo.created_at) + MIN_UTXO_MATURITY_SECONDS);
             allUtxos.push({
               ...utxo,
               address: wallet.address,
-              walletObj: wallet
+              walletObj: wallet,
+              isImmature: Boolean(isImmature)
             });
           }
         }
@@ -265,13 +263,14 @@ export class SikkaHDWallet {
     validateAddress(recipientAddr);
 
     const scan = await this.scanAddresses();
-    if (!scan.utxos || scan.utxos.length === 0) {
-      throw new Error("Insufficient mature balance across HD wallet (no spendable outputs found)");
+    const spendableUtxos = (scan.utxos || []).filter(u => !u.isImmature);
+    if (!spendableUtxos || spendableUtxos.length === 0) {
+      throw new Error("Insufficient mature balance across HD wallet (no spendable outputs found - UTXOs require 10 minute maturity)");
     }
 
     const selectedUtxos = [];
     let inputTotal = 0n;
-    for (const utxo of scan.utxos) {
+    for (const utxo of spendableUtxos) {
       selectedUtxos.push(utxo);
       inputTotal += BigInt(utxo.value);
       if (inputTotal >= amount) break;
