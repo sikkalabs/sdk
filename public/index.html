@@ -1138,6 +1138,30 @@
     Built with ⚡ by <a href="https://github.com/sikkalabs" target="_blank">Sikka Labs</a> &bull; Post-Quantum Cryptography &bull; ISC License
   </footer>
 
+  <!-- Synchronous Global Helper Scripts -->
+  <script>
+    window.switchTab = function(targetTabId) {
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      const tabContents = document.querySelectorAll('.tab-content');
+
+      tabBtns.forEach(btn => {
+        if (btn.getAttribute('data-tab') === targetTabId) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      tabContents.forEach(content => {
+        if (content.id === targetTabId) {
+          content.classList.add('active');
+        } else {
+          content.classList.remove('active');
+        }
+      });
+    };
+  </script>
+
   <!-- Script Module Loading SDK -->
   <script type="module">
     let SDK;
@@ -1258,14 +1282,6 @@
       const btnNext = document.getElementById('btnAddressNext');
       if (btnPrev) btnPrev.disabled = addressCurrentPage <= 1;
       if (btnNext) btnNext.disabled = addressCurrentPage >= totalPages;
-    }
-
-    function log(msg) {
-      const logBox = document.getElementById('logBox');
-      if (logBox) {
-        const time = new Date().toLocaleTimeString();
-        logBox.textContent = `[${time}] ${msg}\n` + logBox.textContent;
-      }
     }
 
     function getHostFromURL(url) {
