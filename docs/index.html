@@ -1290,14 +1290,15 @@
       if (activeHDWallet && typeof activeHDWallet.history === 'function') {
         try {
           const remoteHistory = await activeHDWallet.history(100, 20);
-          if (Array.isArray(remoteHistory)) {
-            remoteHistory.forEach(r => {
+          const historyItems = Array.isArray(remoteHistory) ? remoteHistory : (remoteHistory?.items || []);
+          if (Array.isArray(historyItems)) {
+            historyItems.forEach(r => {
               const mapped = {
                 txID: r.hash || r.txid || r.id || ('tx_' + Math.random().toString(36).substring(2, 9)),
-                type: r.type || (r.amount > 0 ? 'received' : 'sent'),
-                address: r.address || r.recipient || 'N/A',
-                amountSikka: r.amountSikka || (r.amount ? SDK.toSikka(r.amount) : '0'),
-                amountChillar: r.amount ? r.amount.toString() : '0',
+                type: r.type || (r.amount > 0 ? 'received' : (r.inputs && r.inputs.length ? 'sent' : 'received')),
+                address: r.address || r.recipient || (r.outputs && r.outputs[0] ? r.outputs[0].address : 'N/A'),
+                amountSikka: r.amountSikka || (r.amount ? SDK.toSikka(r.amount) : (r.outputs && r.outputs[0] ? SDK.toSikka(r.outputs[0].value) : '0')),
+                amountChillar: r.amount ? r.amount.toString() : (r.outputs && r.outputs[0] ? r.outputs[0].value.toString() : '0'),
                 timestamp: r.timestamp ? new Date(r.timestamp * 1000).toLocaleString() : new Date().toLocaleString(),
                 status: r.status || 'Confirmed'
               };
@@ -1407,12 +1408,18 @@
     async function populateAddressExplorer() {
       if (!activeHDWallet) return;
       derivedAddressList = [];
-      const nextCleanIndex = activeHDWallet.nextReceiveIndex || 0;
+      
+      const scan = typeof activeHDWallet.scanAddresses === 'function' 
+        ? await activeHDWallet.scanAddresses() 
+        : { usedAddresses: [], nextReceiveIndex: 0 };
+
+      const usedAddrsSet = new Set((scan.usedAddresses || []).map(u => u.address));
+      const nextCleanIndex = scan.nextReceiveIndex || activeHDWallet.nextReceiveIndex || 0;
       const countToDerive = Math.max(20, nextCleanIndex + 10);
 
       for (let i = 0; i < countToDerive; i++) {
         const addr = await activeHDWallet.getReceiveAddress(i);
-        const isUsed = i < nextCleanIndex;
+        const isUsed = usedAddrsSet.has(addr) || i < nextCleanIndex;
         derivedAddressList.push({
           index: i,
           path: `m/44'/9999'/0'/0/${i}`,
