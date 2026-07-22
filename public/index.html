@@ -752,7 +752,8 @@
   <!-- Navigation Tabs Bar -->
   <div class="tabs-wrapper">
     <nav class="tabs-nav">
-      <button class="tab-btn active" data-tab="tab-wallet">💳 WALLET</button>
+      <button class="tab-btn active" data-tab="tab-home">🏠 HOME</button>
+      <button class="tab-btn" data-tab="tab-wallet">💳 WALLET</button>
       <button class="tab-btn" data-tab="tab-send">💸 SEND</button>
       <button class="tab-btn" data-tab="tab-receive">📥 RECEIVE</button>
       <button class="tab-btn" data-tab="tab-history">📜 HISTORY</button>
@@ -764,73 +765,73 @@
 
   <!-- Main Content Areas -->
   <main>
-    <!-- TAB 1: WALLET -->
-    <div class="tab-content active" id="tab-wallet">
+    <!-- TAB 1: HOME -->
+    <div class="tab-content active" id="tab-home">
+      <div style="max-width: 800px; margin: 0 auto;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">💰 Account Balance</div>
+            <button class="btn-icon" id="btnRefreshBalance">🔄 Refresh</button>
+          </div>
+
+          <div class="hero-balance">
+            <div class="balance-label">Total Spendable Balance</div>
+            <div class="balance-amount" id="balanceSikka">0.00 <span style="font-size: 1.2rem; font-weight: 600;">SIKKA</span></div>
+            <div class="balance-sub" id="balanceChillar">0 chillar</div>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-primary" onclick="switchTab('tab-send')">💸 Send Sikka</button>
+            <button class="btn btn-secondary" onclick="switchTab('tab-receive')">📥 Receive</button>
+          </div>
+
+          <div class="form-label">Primary Receive Address (Bech32m)</div>
+          <div class="address-box">
+            <span class="address-text" id="primaryAddress">Generating wallet...</span>
+            <button class="btn-icon" id="btnCopyAddress">Copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: WALLET -->
+    <div class="tab-content" id="tab-wallet">
       <div class="grid-two-col">
-        <!-- Left: Balance Hero & Quick Actions -->
-        <div>
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title">💰 Account Balance</div>
-              <button class="btn-icon" id="btnRefreshBalance">🔄 Refresh</button>
-            </div>
+        <!-- Left: Seed Phrase & Keys -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔑 Seed Phrase & Keys</div>
+            <button class="btn-icon" id="btnLockWallet" title="Clear session cache and lock wallet">🔒 Lock Session</button>
+          </div>
+          
+          <div class="button-group">
+            <button class="btn btn-secondary" id="btnNewWallet">✨ New 24-Word Seed</button>
+            <button class="btn btn-secondary" id="btnToggleSeed">👁️ Show / Hide Seed</button>
+          </div>
 
-            <div class="hero-balance">
-              <div class="balance-label">Total Spendable Balance</div>
-              <div class="balance-amount" id="balanceSikka">0.00 <span style="font-size: 1.2rem; font-weight: 600;">SIKKA</span></div>
-              <div class="balance-sub" id="balanceChillar">0 chillar</div>
-            </div>
+          <!-- Seed Container -->
+          <div id="seedContainer" style="display: none;">
+            <div class="form-label">24-Word BIP-39 Seed Mnemonic</div>
+            <div class="mnemonic-grid" id="mnemonicGrid"></div>
+          </div>
 
-            <div class="button-group">
-              <button class="btn btn-primary" onclick="switchTab('tab-send')">💸 Send Sikka</button>
-              <button class="btn btn-secondary" onclick="switchTab('tab-receive')">📥 Receive</button>
-            </div>
-
-            <div class="form-label">Primary Receive Address (Bech32m)</div>
-            <div class="address-box">
-              <span class="address-text" id="primaryAddress">Generating wallet...</span>
-              <button class="btn-icon" id="btnCopyAddress">Copy</button>
-            </div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 1rem; padding: 0.75rem; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-main);">
+            <strong>ℹ️ Security Notice:</strong> Keep your 24-word seed phrase safe. Anyone with access to this phrase can control your funds.
           </div>
         </div>
 
-        <!-- Right: Seed Phrase & Management -->
-        <div>
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title">🔑 Seed Phrase & Keys</div>
-              <button class="btn-icon" id="btnLockWallet" title="Clear session cache and lock wallet">🔒 Lock Session</button>
-            </div>
-            
-            <div class="button-group">
-              <button class="btn btn-secondary" id="btnNewWallet">✨ New 24-Word Seed</button>
-              <button class="btn btn-secondary" id="btnToggleSeed">👁️ Show / Hide Seed</button>
-            </div>
-
-            <!-- Seed Container -->
-            <div id="seedContainer" style="display: none;">
-              <div class="form-label">24-Word BIP-39 Seed Mnemonic</div>
-              <div class="mnemonic-grid" id="mnemonicGrid"></div>
-            </div>
-
-            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 1rem; padding: 0.75rem; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-main);">
-              <strong>ℹ️ Security Notice:</strong> Keep your 24-word seed phrase safe. Anyone with access to this phrase can control your funds.
-            </div>
+        <!-- Right: Import Existing Wallet -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📥 Import Existing Wallet</div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">BIP-39 Mnemonic Phrase (12-24 Words)</label>
+            <textarea class="form-textarea" id="importMnemonicInput" rows="3" placeholder="enter 24 word seed phrase..."></textarea>
           </div>
 
-          <!-- Card: Import Existing Wallet -->
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title">📥 Import Existing Wallet</div>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">BIP-39 Mnemonic Phrase (12-24 Words)</label>
-              <textarea class="form-textarea" id="importMnemonicInput" rows="3" placeholder="enter 24 word seed phrase..."></textarea>
-            </div>
-
-            <button class="btn btn-secondary" id="btnImportMnemonic">📥 Restore Wallet</button>
-          </div>
+          <button class="btn btn-secondary" id="btnImportMnemonic">📥 Restore Wallet</button>
         </div>
       </div>
     </div>
@@ -1701,7 +1702,7 @@
         log("Restoring wallet from provided seed phrase...");
         sessionStorage.removeItem('sikka_active_mnemonic');
         await loadWallet(text);
-        window.switchTab('tab-wallet');
+        window.switchTab('tab-home');
       });
 
       const copyPrimary = () => {
