@@ -1615,28 +1615,62 @@
     async function loadAndRenderHistory(throwOnError = false) {
       let localItems = getSavedTxHistory();
 
-      if (activeHDWallet && typeof activeHDWallet.history === 'function') {
+      if (activeHDWallet) {
         try {
-          const remoteHistory = await activeHDWallet.history(100, 20);
-          const historyItems = Array.isArray(remoteHistory) ? remoteHistory : (remoteHistory?.items || []);
-          if (Array.isArray(historyItems)) {
-            historyItems.forEach(r => {
+          const addressSet = new Set();
+          derivedAddressList.forEach(a => addressSet.add(a.address));
+          changeDerivedAddressList.forEach(a => addressSet.add(a.address));
+
+          if (addressSet.size === 0) {
+            const primary = await activeHDWallet.getReceiveAddress(0);
+            addressSet.add(primary);
+          }
+
+          const addressesToQuery = Array.from(addressSet);
+          const rawTail = await activeHDWallet.api.getSyncTail(addressesToQuery, 100);
+          const remoteItems = Array.isArray(rawTail) ? rawTail : (rawTail?.items || []);
+
+          if (Array.isArray(remoteItems)) {
+            remoteItems.forEach(tx => {
+              const txid = tx.hash || tx.id || tx.txid || ('tx_' + Math.random().toString(36).substring(2, 9));
+              
+              let isWalletOutput = false;
+              let mainAddress = '';
+              let sikkaAmount = '0';
+
+              if (tx.outputs) {
+                for (const out of tx.outputs) {
+                  if (addressSet.has(out.address)) {
+                    isWalletOutput = true;
+                    mainAddress = out.address;
+                    sikkaAmount = SDK ? SDK.toSikka(out.value) : '0';
+                    break;
+                  }
+                }
+                if (!mainAddress && tx.outputs[0]) {
+                  mainAddress = tx.outputs[0].address;
+                  sikkaAmount = SDK ? SDK.toSikka(tx.outputs[0].value) : '0';
+                }
+              }
+
+              const type = isWalletOutput ? 'received' : 'sent';
+
               const mapped = {
-                txID: r.hash || r.txid || r.id || ('tx_' + Math.random().toString(36).substring(2, 9)),
-                type: r.type || (r.amount > 0 ? 'received' : (r.inputs && r.inputs.length ? 'sent' : 'received')),
-                address: r.address || r.recipient || (r.outputs && r.outputs[0] ? r.outputs[0].address : 'N/A'),
-                amountSikka: r.amountSikka || (r.amount ? SDK.toSikka(r.amount) : (r.outputs && r.outputs[0] ? SDK.toSikka(r.outputs[0].value) : '0')),
-                amountChillar: r.amount ? r.amount.toString() : (r.outputs && r.outputs[0] ? r.outputs[0].value.toString() : '0'),
-                timestamp: r.timestamp ? new Date(r.timestamp * 1000).toLocaleString() : new Date().toLocaleString(),
-                status: r.status || 'Confirmed'
+                txID: txid,
+                type,
+                address: mainAddress || 'N/A',
+                amountSikka: sikkaAmount,
+                timestamp: tx.timestamp ? new Date(tx.timestamp * 1000).toLocaleString() : new Date().toLocaleString(),
+                status: 'Confirmed'
               };
+
               if (!localItems.some(t => t.txID === mapped.txID)) {
                 localItems.push(mapped);
               }
             });
           }
         } catch (e) {
-          console.warn("Remote history query notice:", e.message);
+          console.warn("Remote history fetch notice:", e.message);
           if (throwOnError) throw e;
         }
       }
