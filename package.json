@@ -8,7 +8,6 @@
     "test": "node test.js",
     "test:github": "node test.js --github",
     "test:remote": "node test.js --remote",
-    "test:webpage": "node test-webpage.js",
     "serve": "npx -y serve ."
   },
   "repository": {
