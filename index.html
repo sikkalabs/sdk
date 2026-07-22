@@ -1880,13 +1880,20 @@
     }
 
     async function initSDK() {
-      log("Loading Sikka SDK module from GitHub CDN...");
+      log("Loading Sikka SDK module from ./src/index.js...");
       try {
-        SDK = await import('https://cdn.jsdelivr.net/gh/sikkalabs/sdk@main/src/index.js');
-        log("Loaded Sikka SDK module successfully.");
+        SDK = await import('./src/index.js');
+        log("Loaded local Sikka SDK module successfully.");
         await startWalletApp();
       } catch (e) {
-        log("ERROR: Failed to load Sikka SDK module from GitHub CDN: " + e.message);
+        log("Notice: Failed to load local module, falling back to CDN: " + e.message);
+        try {
+          SDK = await import('https://cdn.jsdelivr.net/gh/sikkalabs/sdk@main/src/index.js');
+          log("Loaded Sikka SDK module from CDN successfully.");
+          await startWalletApp();
+        } catch (e2) {
+          log("ERROR: Failed to load Sikka SDK module: " + e2.message);
+        }
       }
     }
 
