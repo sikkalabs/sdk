@@ -1008,7 +1008,7 @@
         <div class="card" style="margin-bottom: 0;">
           <div class="card-header">
             <div class="card-title">🌿 Quick HD Derivation</div>
-            <span class="badge">Gap Limit: 10</span>
+            <span class="badge">Gap Limit: 20</span>
           </div>
           
           <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
@@ -1194,9 +1194,9 @@
           <div class="card-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">🔒 Wallet Preferences</div>
           <div class="form-group">
             <label class="form-label">HD Derivation Gap Limit</label>
-            <input type="number" class="form-input" id="gapLimitInput" value="10" min="1" max="50" />
+            <input type="text" class="form-input" value="20 (fixed)" disabled style="opacity: 0.6; cursor: not-allowed;" />
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">
-              Maximum consecutive unused addresses scanned during balance discovery.
+              Fixed at 20 consecutive unused addresses for reliable balance discovery.
             </div>
           </div>
         </div>
@@ -1960,6 +1960,16 @@
       log(`Initializing new 24-word BIP-39 HD Wallet (${getHostFromURL(currentNodeURL)})...`);
       updatePowRequirementUI();
       await loadWallet();
+
+      // Auto-refresh balance & history every 30 seconds
+      if (window._sikkaAutoRefresh) clearInterval(window._sikkaAutoRefresh);
+      window._sikkaAutoRefresh = setInterval(async () => {
+        if (activeHDWallet) {
+          await refreshBalance().catch(() => {});
+          await loadAndRenderHistory().catch(() => {});
+        }
+      }, 30000);
+      log("Auto-refresh enabled (30s interval).");
     }
 
     async function loadWallet(mnemonicStr) {
@@ -1973,7 +1983,7 @@
           }
         }
 
-        const gapLimit = parseInt(document.getElementById('gapLimitInput')?.value || "10", 10);
+        const gapLimit = 20;
         activeHDWallet = await SDK.createHDWallet({
           mnemonic: seedToUse,
           nodeURL: currentNodeURL,
