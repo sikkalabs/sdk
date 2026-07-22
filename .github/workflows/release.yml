@@ -32,8 +32,8 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "TAG_NAME=v$VERSION" >> $GITHUB_ENV
-          echo "Extracted version: $VERSION (Tag: v$VERSION)"
+          echo "TAG_NAME=$VERSION" >> $GITHUB_ENV
+          echo "Extracted version: $VERSION (Tag: $VERSION)"
 
       - name: Check if Release Tag Exists
         id: check_tag
