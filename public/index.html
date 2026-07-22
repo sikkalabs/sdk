@@ -1602,7 +1602,9 @@
     async function initSDK() {
       log("Loading SDK module...");
       const possibleTargets = [
+        './src/index.js',
         '../src/index.js',
+        '/src/index.js',
         'https://cdn.jsdelivr.net/gh/sikkalabs/sdk@main/src/index.js',
         'https://esm.sh/gh/sikkalabs/sdk?bundle&target=es2022'
       ];
@@ -1611,10 +1613,10 @@
         try {
           SDK = await import(target);
           log("Loaded SDK from: " + target);
-          startWalletApp();
+          await startWalletApp();
           return;
         } catch (e) {
-          console.warn("Failed loading SDK from " + target + ":", e.message);
+          // Continue to next fallback source if target not found
         }
       }
 
