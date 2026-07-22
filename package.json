@@ -8,8 +8,7 @@
   "scripts": {
     "test": "node test.js",
     "test:github": "node test.js --github",
-    "test:remote": "node test.js --remote",
-    "serve": "npx -y serve ."
+    "test:remote": "node test.js --remote"
   },
   "repository": {
     "type": "git",
