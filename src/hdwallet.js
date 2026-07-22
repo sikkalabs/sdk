@@ -21,7 +21,7 @@ export const MAX_TX_INPUTS = 64;
 export const MAX_TX_OUTPUTS = 256;
 
 export class SikkaHDWallet {
-  constructor({ mnemonic, passphrase = "", nodeURL = 'https://1.sikkalabs.com', gapLimit = 10 } = {}) {
+  constructor({ mnemonic, passphrase = "", nodeURL = 'https://1.sikkalabs.com', gapLimit = 20 } = {}) {
     if (mnemonic) {
       const normalized = normalizeMnemonic(mnemonic);
       if (!validateMnemonic(normalized)) {
