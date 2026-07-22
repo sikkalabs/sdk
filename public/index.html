@@ -18,25 +18,37 @@
   }
   </script>
 
-  <!-- System Font Stacks -->
+  <!-- Monochrome White Theme Styling -->
   <style>
     :root {
-      --bg-gradient: radial-gradient(circle at 15% 15%, #181c2e 0%, #0d0f19 50%, #080910 100%);
-      --card-bg: rgba(22, 26, 46, 0.7);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --card-border-hover: rgba(79, 172, 254, 0.4);
-      --primary-cyan: #00f2fe;
-      --primary-blue: #4facfe;
-      --accent-purple: #7f53ac;
-      --accent-pink: #647deb;
-      --success-green: #10b981;
-      --warning-amber: #f59e0b;
-      --danger-red: #ef4444;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --font-heading: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      --bg-body: #ffffff;
+      --bg-subtle: #f8f9fa;
+      --bg-card: #ffffff;
+      --bg-card-alt: #f1f3f5;
+      --bg-input: #ffffff;
+      --bg-hover: #e9ecef;
+      --bg-black: #000000;
+      
+      --border-light: #e9ecef;
+      --border-main: #dee2e6;
+      --border-dark: #212529;
+      --border-black: #000000;
+      
+      --text-main: #000000;
+      --text-secondary: #343a40;
+      --text-muted: #6c757d;
+      --text-inverse: #ffffff;
+
+      --font-heading: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+      
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
     }
 
     * {
@@ -46,7 +58,7 @@
     }
 
     body {
-      background: var(--bg-gradient);
+      background-color: var(--bg-body);
       color: var(--text-main);
       font-family: var(--font-body);
       min-height: 100vh;
@@ -56,35 +68,19 @@
       overflow-x: hidden;
     }
 
-    /* Background Ambient Glows */
-    .glow-sphere-1 {
-      position: absolute;
-      top: -100px;
-      left: -100px;
-      width: 450px;
-      height: 450px;
-      background: radial-gradient(circle, rgba(79, 172, 254, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
-      pointer-events: none;
-      z-index: 0;
+    /* Subtle top border bar */
+    .top-indicator-bar {
+      height: 4px;
+      background: var(--bg-black);
+      width: 100%;
     }
 
-    .glow-sphere-2 {
-      position: absolute;
-      bottom: -150px;
-      right: -100px;
-      width: 550px;
-      height: 550px;
-      background: radial-gradient(circle, rgba(127, 83, 172, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
+    /* Header */
     header {
       position: relative;
       z-index: 10;
-      border-bottom: 1px solid var(--card-border);
-      backdrop-filter: blur(16px);
-      background: rgba(13, 15, 25, 0.6);
+      border-bottom: 1px solid var(--border-main);
+      background: var(--bg-body);
       padding: 1.25rem 2rem;
       display: flex;
       justify-content: space-between;
@@ -96,35 +92,36 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.85rem;
     }
 
     .brand-icon {
-      width: 42px;
-      height: 42px;
-      background: linear-gradient(135deg, var(--primary-cyan), var(--primary-blue));
-      border-radius: 12px;
+      width: 44px;
+      height: 44px;
+      background: var(--bg-black);
+      color: var(--text-inverse);
+      border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.5rem;
-      box-shadow: 0 4px 20px rgba(0, 242, 254, 0.35);
+      font-size: 1.4rem;
+      font-weight: bold;
     }
 
     .brand-title {
       font-family: var(--font-heading);
-      font-size: 1.4rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #ffffff 30%, var(--primary-cyan));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      letter-spacing: -0.02em;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
     }
 
     .brand-subtitle {
       font-size: 0.75rem;
       color: var(--text-muted);
-      font-weight: 500;
+      font-weight: 600;
+      letter-spacing: 0.02em;
     }
 
     .header-badges {
@@ -138,73 +135,143 @@
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      padding: 0.4rem 0.8rem;
+      padding: 0.35rem 0.75rem;
       border-radius: 20px;
       font-size: 0.75rem;
-      font-weight: 600;
-      backdrop-filter: blur(8px);
-      border: 1px solid var(--card-border);
-    }
-
-    .badge-quantum {
-      background: rgba(127, 83, 172, 0.2);
-      border-color: rgba(127, 83, 172, 0.4);
-      color: #c084fc;
+      font-weight: 700;
+      border: 1px solid var(--border-dark);
+      background: var(--bg-subtle);
+      color: var(--text-main);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
     .badge-node {
-      background: rgba(16, 185, 129, 0.15);
-      border-color: rgba(16, 185, 129, 0.3);
-      color: var(--success-green);
+      background: #ffffff;
+      border-color: var(--border-main);
+      color: var(--text-secondary);
     }
 
     .status-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background-color: var(--success-green);
-      box-shadow: 0 0 10px var(--success-green);
-      animation: pulse 2s infinite;
+      background-color: var(--bg-black);
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
+      animation: pulse-mono 2s infinite;
     }
 
-    @keyframes pulse {
-      0% { transform: scale(0.95); opacity: 0.8; }
+    @keyframes pulse-mono {
+      0% { transform: scale(0.95); opacity: 0.7; }
       50% { transform: scale(1.15); opacity: 1; }
-      100% { transform: scale(0.95); opacity: 0.8; }
+      100% { transform: scale(0.95); opacity: 0.7; }
     }
 
+    /* Tabs Bar */
+    .tabs-wrapper {
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border-main);
+      padding: 0.75rem 2rem 0 2rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .tabs-nav {
+      display: flex;
+      gap: 0.5rem;
+      max-width: 1200px;
+      width: 100%;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .tabs-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom: none;
+      border-top-left-radius: var(--radius-md);
+      border-top-right-radius: var(--radius-md);
+      padding: 0.75rem 1.5rem;
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: var(--bg-hover);
+    }
+
+    .tab-btn.active {
+      background: var(--bg-black);
+      color: var(--text-inverse);
+      border-color: var(--bg-black);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Container & Grid */
     main {
       position: relative;
       z-index: 10;
       flex: 1;
-      max-width: 1280px;
+      max-width: 1200px;
       width: 100%;
       margin: 0 auto;
       padding: 2rem 1.5rem;
+    }
+
+    .tab-content {
+      display: none;
+      animation: tabFadeIn 0.2s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .grid-two-col {
       display: grid;
       grid-template-columns: 1fr;
       gap: 1.5rem;
     }
 
     @media (min-width: 900px) {
-      main {
-        grid-template-columns: 1.2fr 0.8fr;
+      .grid-two-col {
+        grid-template-columns: 1fr 1fr;
       }
     }
 
+    /* Cards */
     .card {
-      background: var(--card-bg);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--card-border);
-      border-radius: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-lg);
       padding: 1.75rem;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1.5rem;
     }
 
     .card:hover {
-      border-color: var(--card-border-hover);
-      box-shadow: 0 12px 40px rgba(0, 242, 254, 0.08);
+      border-color: var(--border-dark);
+      box-shadow: var(--shadow-md);
     }
 
     .card-header {
@@ -213,59 +280,63 @@
       align-items: center;
       margin-bottom: 1.25rem;
       padding-bottom: 0.75rem;
-      border-bottom: 1px solid var(--card-border);
+      border-bottom: 1px solid var(--border-light);
     }
 
     .card-title {
       font-family: var(--font-heading);
-      font-size: 1.15rem;
-      font-weight: 700;
+      font-size: 1.1rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      color: var(--text-main);
     }
 
-    /* Balance Hero Banner */
+    /* Hero Balance Card */
     .hero-balance {
-      background: linear-gradient(135deg, rgba(79, 172, 254, 0.12), rgba(127, 83, 172, 0.12));
-      border: 1px solid rgba(79, 172, 254, 0.25);
-      border-radius: 16px;
-      padding: 1.5rem;
+      background: var(--bg-black);
+      color: var(--text-inverse);
+      border-radius: var(--radius-md);
+      padding: 1.75rem;
       margin-bottom: 1.5rem;
       position: relative;
       overflow: hidden;
     }
 
     .balance-label {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-muted);
-      font-weight: 600;
-      margin-bottom: 0.25rem;
+      letter-spacing: 0.1em;
+      color: #a1a1aa;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
     }
 
     .balance-amount {
       font-family: var(--font-heading);
-      font-size: 2.25rem;
-      font-weight: 800;
+      font-size: 2.5rem;
+      font-weight: 900;
       color: #ffffff;
       line-height: 1.1;
+      letter-spacing: -0.02em;
     }
 
     .balance-sub {
       font-family: var(--font-mono);
       font-size: 0.85rem;
-      color: var(--primary-cyan);
+      color: #d4d4d8;
       margin-top: 0.4rem;
     }
 
     /* Address Pill & Copy */
     .address-box {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 0.75rem 1rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -276,66 +347,73 @@
     .address-text {
       font-family: var(--font-mono);
       font-size: 0.82rem;
-      color: #e2e8f0;
-      word-break: break-all;
-    }
-
-    .btn-icon {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--card-border);
       color: var(--text-main);
-      padding: 0.4rem 0.75rem;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      white-space: nowrap;
-    }
-
-    .btn-icon:hover {
-      background: var(--primary-blue);
-      border-color: var(--primary-blue);
-      color: #fff;
+      word-break: break-all;
+      font-weight: 500;
     }
 
     /* Buttons */
+    .btn-icon {
+      background: var(--bg-body);
+      border: 1px solid var(--border-dark);
+      color: var(--text-main);
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .btn-icon:hover {
+      background: var(--bg-black);
+      color: var(--text-inverse);
+    }
+
     .btn {
       width: 100%;
       padding: 0.85rem 1.25rem;
-      border-radius: 12px;
+      border-radius: var(--radius-md);
       font-family: var(--font-heading);
-      font-weight: 600;
-      font-size: 0.95rem;
+      font-weight: 700;
+      font-size: 0.9rem;
       cursor: pointer;
-      transition: all 0.25 ease;
-      border: none;
+      transition: all 0.2s ease;
+      border: 1px solid var(--border-dark);
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
-      color: #ffffff;
-      box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+      background: var(--bg-black);
+      color: var(--text-inverse);
+      border-color: var(--bg-black);
+      box-shadow: var(--shadow-sm);
     }
 
     .btn-primary:hover {
+      background: #27272a;
+      border-color: #27272a;
       transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(79, 172, 254, 0.45);
+      box-shadow: var(--shadow-md);
     }
 
     .btn-secondary {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--card-border);
+      background: var(--bg-body);
+      border: 1px solid var(--border-main);
       color: var(--text-main);
     }
 
     .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.2);
+      background: var(--bg-hover);
+      border-color: var(--border-dark);
     }
 
     .button-group {
@@ -345,37 +423,62 @@
       margin-bottom: 1.25rem;
     }
 
-    /* Inputs */
+    .preset-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .btn-preset {
+      flex: 1;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-main);
+      color: var(--text-main);
+      padding: 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-preset:hover {
+      background: var(--bg-black);
+      color: var(--text-inverse);
+      border-color: var(--bg-black);
+    }
+
+    /* Forms & Inputs */
     .form-group {
       margin-bottom: 1.25rem;
     }
 
     .form-label {
       display: block;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--text-secondary);
       margin-bottom: 0.4rem;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
     }
 
     .form-input, .form-textarea {
       width: 100%;
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      padding: 0.75rem 1rem;
+      background: var(--bg-input);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
+      padding: 0.8rem 1rem;
       color: var(--text-main);
       font-family: var(--font-mono);
       font-size: 0.85rem;
       outline: none;
-      transition: border-color 0.2s ease;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .form-input:focus, .form-textarea:focus {
-      border-color: var(--primary-cyan);
-      box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+      border-color: var(--border-black);
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
     }
 
     /* Mnemonic Word Grid */
@@ -383,11 +486,11 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 0.5rem;
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
       padding: 1rem;
-      max-height: 220px;
+      max-height: 240px;
       overflow-y: auto;
       margin-bottom: 1rem;
     }
@@ -399,10 +502,10 @@
     }
 
     .word-badge {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 6px;
-      padding: 0.35rem 0.5rem;
+      background: var(--bg-body);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.6rem;
       font-family: var(--font-mono);
       font-size: 0.75rem;
       display: flex;
@@ -414,20 +517,21 @@
       color: var(--text-muted);
       font-size: 0.65rem;
       user-select: none;
+      font-weight: bold;
     }
 
     .word-val {
-      color: #f1f5f9;
-      font-weight: 500;
+      color: var(--text-main);
+      font-weight: 600;
     }
 
     /* Mining PoW Progress Box */
     .pow-box {
-      background: rgba(0, 242, 254, 0.05);
-      border: 1px dashed rgba(0, 242, 254, 0.3);
-      border-radius: 12px;
-      padding: 1rem;
-      margin-top: 1rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-top: 1.25rem;
       display: none;
     }
 
@@ -436,15 +540,15 @@
       align-items: center;
       justify-content: space-between;
       font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--primary-cyan);
-      margin-bottom: 0.5rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.6rem;
     }
 
     .progress-bar-bg {
       width: 100%;
-      height: 6px;
-      background: rgba(255, 255, 255, 0.1);
+      height: 8px;
+      background: var(--border-main);
       border-radius: 4px;
       overflow: hidden;
     }
@@ -452,42 +556,95 @@
     .progress-bar-fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, var(--primary-cyan), var(--primary-blue));
+      background: var(--bg-black);
       transition: width 0.3s ease;
     }
 
-    /* Logs & Activity */
-    .log-box {
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      padding: 0.75rem;
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      color: #a7f3d0;
-      max-height: 140px;
-      overflow-y: auto;
-      white-space: pre-wrap;
+    /* QR Code Display */
+    .qr-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
+      margin-bottom: 1.25rem;
     }
 
+    .qr-frame {
+      background: #ffffff;
+      padding: 12px;
+      border: 2px solid var(--border-black);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .qr-frame img {
+      display: block;
+      width: 180px;
+      height: 180px;
+    }
+
+    /* Logs & Terminal */
+    .log-box {
+      background: var(--bg-black);
+      border: 1px solid var(--border-black);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #f4f4f5;
+      min-height: 280px;
+      max-height: 480px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    /* Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-top: 1rem;
+    }
+
+    .data-table th, .data-table td {
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--border-main);
+      text-align: left;
+    }
+
+    .data-table th {
+      background: var(--bg-subtle);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* Footer */
     footer {
-      border-top: 1px solid var(--card-border);
-      padding: 1.25rem 2rem;
+      border-top: 1px solid var(--border-main);
+      padding: 1.5rem 2rem;
       text-align: center;
       font-size: 0.8rem;
       color: var(--text-muted);
-      background: rgba(13, 15, 25, 0.8);
+      background: var(--bg-body);
+      margin-top: auto;
     }
 
     footer a {
-      color: var(--primary-cyan);
-      text-decoration: none;
+      color: var(--text-main);
+      font-weight: 700;
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <div class="glow-sphere-1"></div>
-  <div class="glow-sphere-2"></div>
+  <div class="top-indicator-bar"></div>
 
   <!-- Header -->
   <header>
@@ -499,7 +656,7 @@
       </div>
     </div>
     <div class="header-badges">
-      <div class="badge badge-quantum">🛡️ ML-DSA-87 Quantum Safe</div>
+      <div class="badge">🛡️ ML-DSA-87 Quantum Safe</div>
       <div class="badge badge-node">
         <div class="status-dot"></div>
         <span id="nodeUrlLabel">1.sikkalabs.com</span>
@@ -507,133 +664,253 @@
     </div>
   </header>
 
-  <!-- Main Grid -->
+  <!-- Navigation Tabs Bar -->
+  <div class="tabs-wrapper">
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="tab-wallet">💳 WALLET</button>
+      <button class="tab-btn" data-tab="tab-send">💸 SEND</button>
+      <button class="tab-btn" data-tab="tab-receive">📥 RECEIVE</button>
+      <button class="tab-btn" data-tab="tab-tools">🛠️ TOOLS</button>
+      <button class="tab-btn" data-tab="tab-logs">📋 LOGS</button>
+    </nav>
+  </div>
+
+  <!-- Main Content Areas -->
   <main>
-    <!-- Left Column: Primary Wallet Controls & Send -->
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-      <!-- Hero Card: Wallet Overview -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">💰 Account Balance</div>
-          <button class="btn-icon" id="btnRefreshBalance">🔄 Refresh</button>
-        </div>
+    <!-- TAB 1: WALLET -->
+    <div class="tab-content active" id="tab-wallet">
+      <div class="grid-two-col">
+        <!-- Left: Balance Hero & Quick Actions -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">💰 Account Balance</div>
+              <button class="btn-icon" id="btnRefreshBalance">🔄 Refresh</button>
+            </div>
 
-        <div class="hero-balance">
-          <div class="balance-label">Total Spendable Balance</div>
-          <div class="balance-amount" id="balanceSikka">0.00 <span style="font-size: 1.2rem; font-weight: 500;">SIKKA</span></div>
-          <div class="balance-sub" id="balanceChillar">0 chillar</div>
-        </div>
+            <div class="hero-balance">
+              <div class="balance-label">Total Spendable Balance</div>
+              <div class="balance-amount" id="balanceSikka">0.00 <span style="font-size: 1.2rem; font-weight: 600;">SIKKA</span></div>
+              <div class="balance-sub" id="balanceChillar">0 chillar</div>
+            </div>
 
-        <div class="form-label">Primary Receive Address (Bech32m)</div>
-        <div class="address-box">
-          <span class="address-text" id="primaryAddress">Generating wallet...</span>
-          <button class="btn-icon" id="btnCopyAddress">Copy</button>
-        </div>
+            <div class="button-group">
+              <button class="btn btn-primary" onclick="switchTab('tab-send')">💸 Send Sikka</button>
+              <button class="btn btn-secondary" onclick="switchTab('tab-receive')">📥 Receive</button>
+            </div>
 
-        <div class="button-group">
-          <button class="btn btn-secondary" id="btnNewWallet">✨ New 24-Word Seed</button>
-          <button class="btn btn-secondary" id="btnToggleSeed">👁️ Show / Hide Seed</button>
-        </div>
-
-        <!-- Hidden Seed Container -->
-        <div id="seedContainer" style="display: none;">
-          <div class="form-label">24-Word BIP-39 Seed Mnemonic</div>
-          <div class="mnemonic-grid" id="mnemonicGrid"></div>
-        </div>
-      </div>
-
-      <!-- Card: Send Sikka (Auto PoW Mining) -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">💸 Send Sikka</div>
-          <span style="font-size: 0.75rem; color: var(--text-muted);">Client-Side SHA3-256 PoW</span>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Recipient Address</label>
-          <input type="text" class="form-input" id="sendRecipient" placeholder="sikka1..." />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Amount (in Sikka)</label>
-          <input type="text" class="form-input" id="sendAmount" placeholder="e.g. 1.5" />
-          <div style="font-size: 0.75rem; color: var(--primary-cyan); margin-top: 0.3rem;" id="sendAmountChillar">
-            = 0 chillar
+            <div class="form-label">Primary Receive Address (Bech32m)</div>
+            <div class="address-box">
+              <span class="address-text" id="primaryAddress">Generating wallet...</span>
+              <button class="btn-icon" id="btnCopyAddress">Copy</button>
+            </div>
           </div>
         </div>
 
-        <button class="btn btn-primary" id="btnSend">🚀 Mine PoW & Broadcast Transaction</button>
+        <!-- Right: Seed Phrase & Management -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🔑 Seed Phrase & Keys</div>
+            </div>
+            
+            <div class="button-group">
+              <button class="btn btn-secondary" id="btnNewWallet">✨ New 24-Word Seed</button>
+              <button class="btn btn-secondary" id="btnToggleSeed">👁️ Show / Hide Seed</button>
+            </div>
 
-        <!-- Mining Progress Indicator -->
-        <div class="pow-box" id="powBox">
-          <div class="pow-header">
-            <span id="powStatusText">⛏️ Mining Proof-of-Work Nonce...</span>
-            <span id="powBitsText">0 bits</span>
-          </div>
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="powProgressBar"></div>
+            <!-- Seed Container -->
+            <div id="seedContainer" style="display: none;">
+              <div class="form-label">24-Word BIP-39 Seed Mnemonic</div>
+              <div class="mnemonic-grid" id="mnemonicGrid"></div>
+            </div>
+
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 1rem; padding: 0.75rem; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-main);">
+              <strong>ℹ️ Security Notice:</strong> Keep your 24-word seed phrase safe. Anyone with access to this phrase can control your funds.
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Right Column: HD Manager, Unit Converter & Logs -->
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-      <!-- Card: Import Custom Mnemonic -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">🔑 Import Wallet</div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">BIP-39 Mnemonic Phrase (12-24 Words)</label>
-          <textarea class="form-textarea" id="importMnemonicInput" rows="3" placeholder="enter 24 word seed phrase..."></textarea>
-        </div>
-        <button class="btn btn-secondary" id="btnImportMnemonic">📥 Restore Wallet</button>
-      </div>
+    <!-- TAB 2: SEND -->
+    <div class="tab-content" id="tab-send">
+      <div style="max-width: 720px; margin: 0 auto;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">💸 Send Sikka</div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">Client-Side SHA3-256 PoW</span>
+          </div>
 
-      <!-- Card: Hierarchical Deterministic (HD) Derivation -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">🌿 HD Address Manager</div>
-          <span class="badge" style="background: rgba(255,255,255,0.05);">Gap Limit: 10</span>
-        </div>
-        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
-          Derive deterministic child addresses (`account/branch/index`) from master seed.
-        </div>
-        <button class="btn btn-secondary" id="btnGetNewAddress" style="margin-bottom: 1rem;">
-          ➕ Generate Next Clean Receive Address
-        </button>
+          <div class="form-group">
+            <label class="form-label">Recipient Address</label>
+            <input type="text" class="form-input" id="sendRecipient" placeholder="sikka1..." />
+          </div>
 
-        <div class="form-label">Latest Derived Address</div>
-        <div class="address-box">
-          <span class="address-text" id="hdNextAddress" style="font-size: 0.78rem;">Click button above to derive</span>
-          <button class="btn-icon" id="btnCopyHDAddress">Copy</button>
-        </div>
-      </div>
+          <div class="form-group">
+            <label class="form-label">Amount (in Sikka)</label>
+            <div class="preset-group">
+              <button class="btn-preset" data-amount="0.1">0.1 SIKKA</button>
+              <button class="btn-preset" data-amount="1">1 SIKKA</button>
+              <button class="btn-preset" data-amount="5">5 SIKKA</button>
+              <button class="btn-preset" data-amount="10">10 SIKKA</button>
+            </div>
+            <input type="text" class="form-input" id="sendAmount" placeholder="e.g. 1.5" />
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.4rem; font-weight: 600;" id="sendAmountChillar">
+              = 0 chillar
+            </div>
+          </div>
 
-      <!-- Card: Unit Converter -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">🧮 Sikka <-> Chillar Converter</div>
-        </div>
-        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-          1 Sikka = 10,000,000,000 chillar (10 decimal places)
-        </div>
-        <div class="form-group">
-          <label class="form-label">Sikka Amount</label>
-          <input type="text" class="form-input" id="calcSikka" value="1" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Chillar Amount</label>
-          <input type="text" class="form-input" id="calcChillar" value="10000000000" />
+          <button class="btn btn-primary" id="btnSend" style="padding: 1rem;">🚀 Mine PoW & Broadcast Transaction</button>
+
+          <!-- Mining Progress Indicator -->
+          <div class="pow-box" id="powBox">
+            <div class="pow-header">
+              <span id="powStatusText">⛏️ Mining Proof-of-Work Nonce...</span>
+              <span id="powBitsText">0 bits</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="powProgressBar"></div>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
 
-      <!-- Card: System Activity Log -->
+    <!-- TAB 3: RECEIVE -->
+    <div class="tab-content" id="tab-receive">
+      <div class="grid-two-col">
+        <!-- Left: Primary Address & QR -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📥 Primary Receive Address</div>
+          </div>
+
+          <div class="qr-container">
+            <div class="qr-frame">
+              <img id="qrCodeImg" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><rect width='180' height='180' fill='%23ffffff'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%23000000'>QR Code</text></svg>" alt="Receive Address QR Code" />
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem; font-weight: 600;">Scan to receive Sikka</div>
+          </div>
+
+          <div class="form-label">Sikka Address (Bech32m)</div>
+          <div class="address-box">
+            <span class="address-text" id="receiveTabAddress">Generating wallet...</span>
+            <button class="btn-icon" id="btnCopyReceiveTabAddress">Copy</button>
+          </div>
+        </div>
+
+        <!-- Right: HD Address Generator -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🌿 HD Address Derivation</div>
+            <span class="badge">Gap Limit: 10</span>
+          </div>
+          
+          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+            Derive deterministic child addresses (<code style="font-family: var(--font-mono);">m/44'/9999'/0'/0/i</code>) from your master seed.
+          </div>
+
+          <button class="btn btn-secondary" id="btnGetNewAddress" style="margin-bottom: 1.25rem;">
+            ➕ Generate Next Clean Receive Address
+          </button>
+
+          <div class="form-label">Latest Derived Address</div>
+          <div class="address-box">
+            <span class="address-text" id="hdNextAddress">Click button above to derive</span>
+            <button class="btn-icon" id="btnCopyHDAddress">Copy</button>
+          </div>
+
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 1rem; line-height: 1.4;">
+            Post-quantum ML-DSA-87 signatures ensure state-of-the-art cryptographic security for every derived address.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: TOOLS -->
+    <div class="tab-content" id="tab-tools">
+      <div class="grid-two-col">
+        <!-- Left: Unit Converter -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🧮 Sikka <-> Chillar Converter</div>
+          </div>
+          
+          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            1 Sikka = 10,000,000,000 chillar (10 decimal places)
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Sikka Amount</label>
+            <input type="text" class="form-input" id="calcSikka" value="1" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Chillar Amount</label>
+            <input type="text" class="form-input" id="calcChillar" value="10000000000" />
+          </div>
+
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Sikka</th>
+                <th>Chillar</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1 SIKKA</td>
+                <td>10,000,000,000 chillar</td>
+              </tr>
+              <tr>
+                <td>0.1 SIKKA</td>
+                <td>1,000,000,000 chillar</td>
+              </tr>
+              <tr>
+                <td>0.0000000001 SIKKA</td>
+                <td>1 chillar</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Right: Import Mnemonic & HD Manager -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📥 Import Existing Wallet</div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">BIP-39 Mnemonic Phrase (12-24 Words)</label>
+            <textarea class="form-textarea" id="importMnemonicInput" rows="3" placeholder="enter 24 word seed phrase..."></textarea>
+          </div>
+
+          <button class="btn btn-secondary" id="btnImportMnemonic">📥 Restore Wallet</button>
+
+          <hr style="border: none; border-top: 1px solid var(--border-light); margin: 1.5rem 0;" />
+
+          <div class="card-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">⚙️ SDK Details</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
+            • <strong>Algorithm:</strong> NIST ML-DSA-87 (DILITHIUM)<br>
+            • <strong>Derivation Path:</strong> m/44'/9999'/0'/0/i<br>
+            • <strong>Format:</strong> Bech32m Address Standard
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: LOGS -->
+    <div class="tab-content" id="tab-logs">
       <div class="card">
         <div class="card-header">
           <div class="card-title">📋 Console Activity Log</div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-icon" id="btnCopyLogs">📋 Copy Logs</button>
+            <button class="btn-icon" id="btnClearLogs">🗑️ Clear</button>
+          </div>
         </div>
+
         <div class="log-box" id="logBox">Initializing Sikka Post-Quantum SDK...</div>
       </div>
     </div>
@@ -644,19 +921,66 @@
     Built with ⚡ by <a href="https://github.com/sikkalabs" target="_blank">Sikka Labs</a> &bull; Post-Quantum Cryptography &bull; ISC License
   </footer>
 
-  <!-- Script Module Loading SDK directly from GitHub -->
+  <!-- Script Module Loading SDK -->
   <script type="module">
     let SDK;
 
     function log(msg) {
       const logBox = document.getElementById('logBox');
-      const time = new Date().toLocaleTimeString();
-      logBox.textContent = `[${time}] ${msg}\n` + logBox.textContent;
+      if (logBox) {
+        const time = new Date().toLocaleTimeString();
+        logBox.textContent = `[${time}] ${msg}\n` + logBox.textContent;
+      }
+    }
+
+    // Global tab switching helper
+    window.switchTab = function(targetTabId) {
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      const tabContents = document.querySelectorAll('.tab-content');
+
+      tabBtns.forEach(btn => {
+        if (btn.getAttribute('data-tab') === targetTabId) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      tabContents.forEach(content => {
+        if (content.id === targetTabId) {
+          content.classList.add('active');
+        } else {
+          content.classList.remove('active');
+        }
+      });
+    };
+
+    // Global seed visibility toggle helper
+    window.toggleSeed = function() {
+      const container = document.getElementById('seedContainer');
+      const btn = document.getElementById('btnToggleSeed');
+      if (!container) return;
+      const isHidden = window.getComputedStyle(container).display === 'none';
+      container.style.display = isHidden ? 'block' : 'none';
+      if (btn) {
+        btn.textContent = isHidden ? '🙈 Hide Seed' : '👁️ Show Seed';
+      }
+    };
+
+    function setupTabs() {
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.getAttribute('data-tab');
+          window.switchTab(target);
+        });
+      });
     }
 
     async function initSDK() {
-      log("Loading SDK module from GitHub...");
+      log("Loading SDK module...");
       const possibleTargets = [
+        '../src/index.js',
         'https://cdn.jsdelivr.net/gh/sikkalabs/sdk@main/src/index.js',
         'https://esm.sh/gh/sikkalabs/sdk?bundle&target=es2022'
       ];
@@ -672,22 +996,41 @@
         }
       }
 
-      log("ERROR: Failed to load SDK module from GitHub CDN sources.");
+      log("ERROR: Failed to load SDK module from any source.");
     }
 
     let activeHDWallet = null;
 
     async function startWalletApp() {
-      log("Initializing new 24-word BIP-39 HD Wallet...");
-      await loadWallet();
+      setupTabs();
 
-      // Setup Event Listeners
-      document.getElementById('btnNewWallet').addEventListener('click', async () => {
-        log("Generating fresh 24-word seed phrase...");
-        await loadWallet();
-      });
+      // Bind Event Listeners immediately before any async initialization
+      const btnNewWallet = document.getElementById('btnNewWallet');
+      if (btnNewWallet) {
+        btnNewWallet.addEventListener('click', async () => {
+          log("Generating fresh 24-word seed phrase...");
+          btnNewWallet.disabled = true;
+          btnNewWallet.textContent = "⏳ Generating...";
+          await loadWallet();
+          btnNewWallet.disabled = false;
+          btnNewWallet.textContent = "✨ New 24-Word Seed";
+          
+          // Auto-reveal the newly generated seed
+          const container = document.getElementById('seedContainer');
+          const toggleBtn = document.getElementById('btnToggleSeed');
+          if (container) container.style.display = 'block';
+          if (toggleBtn) toggleBtn.textContent = '🙈 Hide Seed';
+        });
+      }
 
-      document.getElementById('btnImportMnemonic').addEventListener('click', async () => {
+      const btnToggleSeed = document.getElementById('btnToggleSeed');
+      if (btnToggleSeed) {
+        btnToggleSeed.addEventListener('click', () => {
+          window.toggleSeed();
+        });
+      }
+
+      document.getElementById('btnImportMnemonic')?.addEventListener('click', async () => {
         const text = document.getElementById('importMnemonicInput').value.trim();
         if (!text) {
           alert("Please enter a valid seed phrase.");
@@ -699,20 +1042,21 @@
         }
         log("Restoring wallet from provided seed phrase...");
         await loadWallet(text);
+        window.switchTab('tab-wallet');
       });
 
-      document.getElementById('btnToggleSeed').addEventListener('click', () => {
-        const container = document.getElementById('seedContainer');
-        container.style.display = container.style.display === 'none' ? 'block' : 'none';
-      });
-
-      document.getElementById('btnCopyAddress').addEventListener('click', () => {
+      const copyPrimary = () => {
         const addr = document.getElementById('primaryAddress').textContent;
-        navigator.clipboard.writeText(addr);
-        alert("Address copied to clipboard!");
-      });
+        if (addr && !addr.includes('Generating')) {
+          navigator.clipboard.writeText(addr);
+          alert("Primary address copied to clipboard!");
+        }
+      };
 
-      document.getElementById('btnCopyHDAddress').addEventListener('click', () => {
+      document.getElementById('btnCopyAddress')?.addEventListener('click', copyPrimary);
+      document.getElementById('btnCopyReceiveTabAddress')?.addEventListener('click', copyPrimary);
+
+      document.getElementById('btnCopyHDAddress')?.addEventListener('click', () => {
         const addr = document.getElementById('hdNextAddress').textContent;
         if (addr && !addr.includes('Click')) {
           navigator.clipboard.writeText(addr);
@@ -720,9 +1064,9 @@
         }
       });
 
-      document.getElementById('btnRefreshBalance').addEventListener('click', refreshBalance);
+      document.getElementById('btnRefreshBalance')?.addEventListener('click', refreshBalance);
 
-      document.getElementById('btnGetNewAddress').addEventListener('click', async () => {
+      document.getElementById('btnGetNewAddress')?.addEventListener('click', async () => {
         if (!activeHDWallet) return;
         log("Deriving next clean receive address...");
         const newAddr = await activeHDWallet.getNewUnusedAddress();
@@ -730,11 +1074,31 @@
         log(`Derived new address: ${newAddr}`);
       });
 
+      // Log Controls
+      document.getElementById('btnClearLogs')?.addEventListener('click', () => {
+        document.getElementById('logBox').textContent = '';
+      });
+
+      document.getElementById('btnCopyLogs')?.addEventListener('click', () => {
+        navigator.clipboard.writeText(document.getElementById('logBox').textContent);
+        alert("Logs copied to clipboard!");
+      });
+
+      // Amount Presets on Send Tab
+      document.querySelectorAll('.btn-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = btn.getAttribute('data-amount');
+          const sendInput = document.getElementById('sendAmount');
+          sendInput.value = val;
+          sendInput.dispatchEvent(new Event('input'));
+        });
+      });
+
       // Unit Converter Listeners
       const calcSikka = document.getElementById('calcSikka');
       const calcChillar = document.getElementById('calcChillar');
 
-      calcSikka.addEventListener('input', () => {
+      calcSikka?.addEventListener('input', () => {
         try {
           const chillar = SDK.toChillar(calcSikka.value || "0");
           calcChillar.value = chillar.toString();
@@ -743,7 +1107,7 @@
         }
       });
 
-      calcChillar.addEventListener('input', () => {
+      calcChillar?.addEventListener('input', () => {
         try {
           const sikka = SDK.toSikka(calcChillar.value || "0");
           calcSikka.value = sikka;
@@ -756,7 +1120,7 @@
       const sendAmountInput = document.getElementById('sendAmount');
       const sendAmountChillar = document.getElementById('sendAmountChillar');
 
-      sendAmountInput.addEventListener('input', () => {
+      sendAmountInput?.addEventListener('input', () => {
         try {
           const chillar = SDK.toChillar(sendAmountInput.value || "0");
           sendAmountChillar.textContent = `= ${chillar.toLocaleString()} chillar`;
@@ -766,7 +1130,10 @@
       });
 
       // Send Transaction Handler
-      document.getElementById('btnSend').addEventListener('click', sendTransaction);
+      document.getElementById('btnSend')?.addEventListener('click', sendTransaction);
+
+      log("Initializing new 24-word BIP-39 HD Wallet...");
+      await loadWallet();
     }
 
     async function loadWallet(mnemonicStr) {
@@ -775,12 +1142,26 @@
         const primaryAddr = await activeHDWallet.getReceiveAddress(0);
 
         document.getElementById('primaryAddress').textContent = primaryAddr;
+        
+        const receiveTabAddr = document.getElementById('receiveTabAddress');
+        if (receiveTabAddr) {
+          receiveTabAddr.textContent = primaryAddr;
+        }
+
+        updateQRCode(primaryAddr);
         renderMnemonicGrid(activeHDWallet.mnemonic);
 
         log(`Wallet Active. Address: ${primaryAddr}`);
-        await refreshBalance();
+        refreshBalance().catch(e => log("Balance refresh note: " + e.message));
       } catch (err) {
         log("Error creating wallet: " + err.message);
+      }
+    }
+
+    function updateQRCode(address) {
+      const qrImg = document.getElementById('qrCodeImg');
+      if (qrImg && address && !address.includes('Generating')) {
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(address)}`;
       }
     }
 
@@ -804,7 +1185,7 @@
         const balChillar = await activeHDWallet.balance();
         const balSikka = SDK.toSikka(balChillar);
 
-        document.getElementById('balanceSikka').innerHTML = `${balSikka} <span style="font-size: 1.2rem; font-weight: 500;">SIKKA</span>`;
+        document.getElementById('balanceSikka').innerHTML = `${balSikka} <span style="font-size: 1.2rem; font-weight: 600;">SIKKA</span>`;
         document.getElementById('balanceChillar').textContent = `${BigInt(balChillar).toLocaleString()} chillar`;
         log(`Balance updated: ${balSikka} Sikka (${balChillar} chillar)`);
       } catch (err) {
