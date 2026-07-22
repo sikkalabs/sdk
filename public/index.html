@@ -641,6 +641,109 @@
       font-weight: 700;
       text-decoration: underline;
     }
+
+    /* Sub-tabs for Address Explorer */
+    .sub-tabs-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-main);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .sub-tabs-nav {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .sub-tab-btn {
+      background: var(--bg-body);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.85rem;
+      font-family: var(--font-heading);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .sub-tab-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-main);
+      border-color: var(--border-dark);
+    }
+
+    .sub-tab-btn.active {
+      background: var(--bg-black);
+      color: var(--text-inverse);
+      border-color: var(--bg-black);
+    }
+
+    .tab-badge {
+      font-size: 0.68rem;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.1rem 0.45rem;
+      border-radius: 10px;
+      font-weight: bold;
+    }
+
+    .sub-tab-btn:not(.active) .tab-badge {
+      background: var(--bg-hover);
+      color: var(--text-main);
+    }
+
+    /* Address Explorer Table */
+    .address-table-wrapper {
+      overflow-x: auto;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
+    }
+
+    .address-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .address-table th, .address-table td {
+      padding: 0.75rem 0.85rem;
+      border-bottom: 1px solid var(--border-light);
+      text-align: left;
+    }
+
+    .address-table th {
+      background: var(--bg-subtle);
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-main);
+    }
+
+    .address-table tr:hover td {
+      background: var(--bg-subtle);
+    }
+
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding-top: 0.5rem;
+    }
   </style>
 </head>
 <body>
@@ -794,9 +897,9 @@
 
     <!-- TAB 3: RECEIVE -->
     <div class="tab-content" id="tab-receive">
-      <div class="grid-two-col">
+      <div class="grid-two-col" style="margin-bottom: 1.5rem;">
         <!-- Left: Primary Address & QR -->
-        <div class="card">
+        <div class="card" style="margin-bottom: 0;">
           <div class="card-header">
             <div class="card-title">📥 Primary Receive Address</div>
           </div>
@@ -815,10 +918,10 @@
           </div>
         </div>
 
-        <!-- Right: HD Address Generator -->
-        <div class="card">
+        <!-- Right: HD Address Quick Generator -->
+        <div class="card" style="margin-bottom: 0;">
           <div class="card-header">
-            <div class="card-title">🌿 HD Address Derivation</div>
+            <div class="card-title">🌿 Quick HD Derivation</div>
             <span class="badge">Gap Limit: 10</span>
           </div>
           
@@ -838,6 +941,60 @@
 
           <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 1rem; line-height: 1.4;">
             Post-quantum ML-DSA-87 signatures ensure state-of-the-art cryptographic security for every derived address.
+          </div>
+        </div>
+      </div>
+
+      <!-- HD Address Explorer: Sub-Tabbed & Paginated Table -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📑 Derived Address Explorer</div>
+          <span class="badge" style="background: var(--bg-black); color: #fff;">10 Items / Page</span>
+        </div>
+
+        <!-- Sub-Tabs Navigation -->
+        <div class="sub-tabs-wrapper">
+          <div class="sub-tabs-nav">
+            <button class="sub-tab-btn active" data-filter="unused">
+              🟢 Unused Addresses <span class="tab-badge" id="badgeUnusedCount">0</span>
+            </button>
+            <button class="sub-tab-btn" data-filter="used">
+              🔴 Used Addresses <span class="tab-badge" id="badgeUsedCount">0</span>
+            </button>
+            <button class="sub-tab-btn" data-filter="all">
+              📑 All Addresses <span class="tab-badge" id="badgeAllCount">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Address Table -->
+        <div class="address-table-wrapper">
+          <table class="address-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th style="width: 170px;">Derivation Path</th>
+                <th>Bech32m Address</th>
+                <th style="width: 90px;">Status</th>
+                <th style="width: 80px;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="addressTableBody">
+              <tr>
+                <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                  Generating address table...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-bar">
+          <div id="addressPageInfo">Showing 0-0 of 0 addresses</div>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="btn-icon" id="btnAddressPrev">◄ Prev</button>
+            <button class="btn-icon" id="btnAddressNext">Next ►</button>
           </div>
         </div>
       </div>
@@ -985,6 +1142,123 @@
   <script type="module">
     let SDK;
     let currentNodeURL = localStorage.getItem('sikka_node_url') || 'https://1.sikkalabs.com';
+    let derivedAddressList = [];
+    let addressSubTab = 'unused';
+    let addressCurrentPage = 1;
+    const ADDRESS_PAGE_SIZE = 10;
+
+    function log(msg) {
+      const logBox = document.getElementById('logBox');
+      if (logBox) {
+        const time = new Date().toLocaleTimeString();
+        logBox.textContent = `[${time}] ${msg}\n` + logBox.textContent;
+      }
+    }
+
+    async function populateAddressExplorer() {
+      if (!activeHDWallet) return;
+      derivedAddressList = [];
+      const nextCleanIndex = activeHDWallet.nextReceiveIndex || 0;
+      const countToDerive = Math.max(20, nextCleanIndex + 10);
+
+      for (let i = 0; i < countToDerive; i++) {
+        const addr = await activeHDWallet.getReceiveAddress(i);
+        const isUsed = i < nextCleanIndex;
+        derivedAddressList.push({
+          index: i,
+          path: `m/44'/9999'/0'/0/${i}`,
+          address: addr,
+          used: isUsed
+        });
+      }
+
+      renderAddressTable();
+    }
+
+    function renderAddressTable() {
+      const tbody = document.getElementById('addressTableBody');
+      const countUnused = derivedAddressList.filter(a => !a.used).length;
+      const countUsed = derivedAddressList.filter(a => a.used).length;
+      const countAll = derivedAddressList.length;
+
+      const elUnused = document.getElementById('badgeUnusedCount');
+      const elUsed = document.getElementById('badgeUsedCount');
+      const elAll = document.getElementById('badgeAllCount');
+
+      if (elUnused) elUnused.textContent = countUnused;
+      if (elUsed) elUsed.textContent = countUsed;
+      if (elAll) elAll.textContent = countAll;
+
+      let filtered = derivedAddressList;
+      if (addressSubTab === 'unused') {
+        filtered = derivedAddressList.filter(a => !a.used);
+      } else if (addressSubTab === 'used') {
+        filtered = derivedAddressList.filter(a => a.used);
+      }
+
+      const totalPages = Math.ceil(filtered.length / ADDRESS_PAGE_SIZE) || 1;
+      if (addressCurrentPage > totalPages) addressCurrentPage = totalPages;
+      if (addressCurrentPage < 1) addressCurrentPage = 1;
+
+      const startIdx = (addressCurrentPage - 1) * ADDRESS_PAGE_SIZE;
+      const endIdx = Math.min(startIdx + ADDRESS_PAGE_SIZE, filtered.length);
+      const pageItems = filtered.slice(startIdx, endIdx);
+
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (pageItems.length === 0) {
+        const emptyTr = document.createElement('tr');
+        emptyTr.innerHTML = `
+          <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+            No ${addressSubTab} addresses found.
+          </td>
+        `;
+        tbody.appendChild(emptyTr);
+      } else {
+        pageItems.forEach(item => {
+          const tr = document.createElement('tr');
+          const statusBadge = item.used 
+            ? `<span class="badge" style="background: #000; color: #fff; border-color: #000; font-size: 0.65rem;">USED</span>`
+            : `<span class="badge" style="background: var(--bg-subtle); border-color: var(--border-main); color: var(--text-secondary); font-size: 0.65rem;">UNUSED</span>`;
+          
+          tr.innerHTML = `
+            <td style="font-family: var(--font-mono); font-weight: bold; font-size: 0.75rem;">#${item.index}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.75rem;">${item.path}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.78rem; word-break: break-all;">${item.address}</td>
+            <td>${statusBadge}</td>
+            <td>
+              <button class="btn-icon btn-copy-row" data-address="${item.address}">Copy</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('.btn-copy-row').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const addr = btn.getAttribute('data-address');
+            if (addr) {
+              navigator.clipboard.writeText(addr);
+              alert(`Address copied to clipboard:\n${addr}`);
+            }
+          });
+        });
+      }
+
+      const pageInfo = document.getElementById('addressPageInfo');
+      if (pageInfo) {
+        if (filtered.length === 0) {
+          pageInfo.textContent = `0 addresses`;
+        } else {
+          pageInfo.textContent = `Showing ${startIdx + 1}-${endIdx} of ${filtered.length} (Page ${addressCurrentPage} of ${totalPages})`;
+        }
+      }
+
+      const btnPrev = document.getElementById('btnAddressPrev');
+      const btnNext = document.getElementById('btnAddressNext');
+      if (btnPrev) btnPrev.disabled = addressCurrentPage <= 1;
+      if (btnNext) btnNext.disabled = addressCurrentPage >= totalPages;
+    }
 
     function log(msg) {
       const logBox = document.getElementById('logBox');
@@ -1246,6 +1520,31 @@
         const newAddr = await activeHDWallet.getNewUnusedAddress();
         document.getElementById('hdNextAddress').textContent = newAddr;
         log(`Derived new address: ${newAddr}`);
+        await populateAddressExplorer();
+      });
+
+      // Address Explorer Sub-Tab Listeners
+      document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          addressSubTab = btn.getAttribute('data-filter') || 'unused';
+          addressCurrentPage = 1;
+          renderAddressTable();
+        });
+      });
+
+      // Address Explorer Pagination Controls
+      document.getElementById('btnAddressPrev')?.addEventListener('click', () => {
+        if (addressCurrentPage > 1) {
+          addressCurrentPage--;
+          renderAddressTable();
+        }
+      });
+
+      document.getElementById('btnAddressNext')?.addEventListener('click', () => {
+        addressCurrentPage++;
+        renderAddressTable();
       });
 
       // Log Controls
@@ -1331,6 +1630,7 @@
 
         updateQRCode(primaryAddr);
         renderMnemonicGrid(activeHDWallet.mnemonic);
+        await populateAddressExplorer();
 
         log(`Wallet Active (${getHostFromURL(currentNodeURL)}). Address: ${primaryAddr}`);
         refreshBalance().catch(e => log("Balance refresh note: " + e.message));
