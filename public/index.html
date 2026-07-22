@@ -671,6 +671,7 @@
       <button class="tab-btn" data-tab="tab-send">💸 SEND</button>
       <button class="tab-btn" data-tab="tab-receive">📥 RECEIVE</button>
       <button class="tab-btn" data-tab="tab-tools">🛠️ TOOLS</button>
+      <button class="tab-btn" data-tab="tab-settings">⚙️ SETTINGS</button>
       <button class="tab-btn" data-tab="tab-logs">📋 LOGS</button>
     </nav>
   </div>
@@ -909,7 +910,57 @@
       </div>
     </div>
 
-    <!-- TAB 5: LOGS -->
+    <!-- TAB 5: SETTINGS -->
+    <div class="tab-content" id="tab-settings">
+      <div style="max-width: 720px; margin: 0 auto;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⚙️ Network & Node Settings</div>
+            <span class="badge badge-node">
+              <div class="status-dot"></div>
+              <span id="settingsNodeStatus">Active</span>
+            </span>
+          </div>
+
+          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+            Configure the Sikka RPC node endpoint used for UTXO queries, PoW quotes, and transaction broadcasting.
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Sikka Node Endpoint URL</label>
+            <input type="text" class="form-input" id="nodeUrlInput" placeholder="https://1.sikkalabs.com" value="https://1.sikkalabs.com" />
+          </div>
+
+          <div class="form-label" style="margin-top: 1rem;">Default Node Presets</div>
+          <div class="preset-group" style="margin-bottom: 1.25rem;">
+            <button class="btn-preset btn-node-preset" data-node="https://1.sikkalabs.com">1.sikkalabs.com (Main)</button>
+            <button class="btn-preset btn-node-preset" data-node="https://2.sikkalabs.com">2.sikkalabs.com (Backup)</button>
+            <button class="btn-preset btn-node-preset" data-node="http://localhost:8080">Localhost (8080)</button>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-primary" id="btnSaveNodeUrl">💾 Save Node Settings</button>
+            <button class="btn btn-secondary" id="btnTestNodeUrl">⚡ Test Connection</button>
+          </div>
+
+          <!-- Connection Status Result Box -->
+          <div id="nodeTestResult" style="display: none; margin-top: 1.25rem; padding: 1rem; border-radius: var(--radius-md); font-size: 0.82rem; font-family: var(--font-mono);"></div>
+
+          <hr style="border: none; border-top: 1px solid var(--border-light); margin: 1.5rem 0;" />
+
+          <div class="card-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">🔒 Wallet Preferences</div>
+          <div class="form-group">
+            <label class="form-label">HD Derivation Gap Limit</label>
+            <input type="number" class="form-input" id="gapLimitInput" value="10" min="1" max="50" />
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">
+              Maximum consecutive unused addresses scanned during balance discovery.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: LOGS -->
     <div class="tab-content" id="tab-logs">
       <div class="card">
         <div class="card-header">
@@ -933,12 +984,87 @@
   <!-- Script Module Loading SDK -->
   <script type="module">
     let SDK;
+    let currentNodeURL = localStorage.getItem('sikka_node_url') || 'https://1.sikkalabs.com';
 
     function log(msg) {
       const logBox = document.getElementById('logBox');
       if (logBox) {
         const time = new Date().toLocaleTimeString();
         logBox.textContent = `[${time}] ${msg}\n` + logBox.textContent;
+      }
+    }
+
+    function getHostFromURL(url) {
+      try {
+        const u = new URL(url.includes('://') ? url : 'https://' + url);
+        return u.hostname || u.host || url;
+      } catch {
+        return url.replace(/^https?:\/\//, '');
+      }
+    }
+
+    function updateNodeBadge(url) {
+      const label = document.getElementById('nodeUrlLabel');
+      if (label) {
+        label.textContent = getHostFromURL(url);
+      }
+    }
+
+    function saveNodeURL(url) {
+      if (!url) return;
+      let cleanUrl = url.trim();
+      if (!/^https?:\/\//i.test(cleanUrl)) {
+        cleanUrl = 'https://' + cleanUrl;
+      }
+      cleanUrl = cleanUrl.replace(/\/$/, '');
+      currentNodeURL = cleanUrl;
+      localStorage.setItem('sikka_node_url', cleanUrl);
+
+      const input = document.getElementById('nodeUrlInput');
+      if (input) input.value = cleanUrl;
+
+      updateNodeBadge(cleanUrl);
+
+      if (activeHDWallet && SDK && SDK.APIClient) {
+        activeHDWallet.api = new SDK.APIClient(cleanUrl);
+      }
+
+      log(`Node URL configured to: ${cleanUrl}`);
+    }
+
+    async function testNodeConnection(url) {
+      const resultDiv = document.getElementById('nodeTestResult');
+      if (!resultDiv) return;
+      resultDiv.style.display = 'block';
+      resultDiv.style.background = 'var(--bg-subtle)';
+      resultDiv.style.border = '1px solid var(--border-main)';
+      resultDiv.style.color = 'var(--text-main)';
+      resultDiv.innerHTML = `⏳ Testing connection to <code>${url}</code>...`;
+
+      const startTime = performance.now();
+      try {
+        const cleanUrl = url.replace(/\/$/, '');
+        const res = await fetch(`${cleanUrl}/v1/address/sikka1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq?limit=1`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        const latency = Math.round(performance.now() - startTime);
+
+        if (res.ok || res.status === 404 || res.status === 400 || res.status === 200) {
+          resultDiv.style.background = '#f4f4f5';
+          resultDiv.style.border = '1px solid #000000';
+          resultDiv.style.color = '#000000';
+          resultDiv.innerHTML = `<strong>✅ Node Reachable!</strong><br>Status: ${res.status} ${res.statusText || 'OK'}<br>Latency: ${latency}ms<br>Endpoint: <code>${cleanUrl}</code>`;
+          log(`Node connection test passed for ${cleanUrl} (${latency}ms)`);
+        } else {
+          throw new Error(`Node returned HTTP status ${res.status}`);
+        }
+      } catch (err) {
+        resultDiv.style.background = '#f4f4f5';
+        resultDiv.style.border = '1px solid #000000';
+        resultDiv.style.color = '#000000';
+        resultDiv.innerHTML = `<strong>⚠️ Node Test Notice:</strong> ${err.message}<br>Endpoint: <code>${url}</code>`;
+        log(`Node connection test note for ${url}: ${err.message}`);
       }
     }
 
@@ -1012,6 +1138,32 @@
 
     async function startWalletApp() {
       setupTabs();
+
+      // Initialize Node URL settings UI
+      const nodeInput = document.getElementById('nodeUrlInput');
+      if (nodeInput) nodeInput.value = currentNodeURL;
+      updateNodeBadge(currentNodeURL);
+
+      // Node Presets
+      document.querySelectorAll('.btn-node-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetNode = btn.getAttribute('data-node');
+          saveNodeURL(targetNode);
+          testNodeConnection(targetNode);
+        });
+      });
+
+      document.getElementById('btnSaveNodeUrl')?.addEventListener('click', () => {
+        const val = document.getElementById('nodeUrlInput')?.value;
+        saveNodeURL(val);
+        alert(`Node URL saved: ${currentNodeURL}`);
+        refreshBalance().catch(() => {});
+      });
+
+      document.getElementById('btnTestNodeUrl')?.addEventListener('click', () => {
+        const val = document.getElementById('nodeUrlInput')?.value;
+        testNodeConnection(val || currentNodeURL);
+      });
 
       // Bind Event Listeners immediately before any async initialization
       const btnNewWallet = document.getElementById('btnNewWallet');
@@ -1094,12 +1246,14 @@
       });
 
       // Amount Presets on Send Tab
-      document.querySelectorAll('.btn-preset').forEach(btn => {
+      document.querySelectorAll('.btn-preset:not(.btn-node-preset)').forEach(btn => {
         btn.addEventListener('click', () => {
           const val = btn.getAttribute('data-amount');
           const sendInput = document.getElementById('sendAmount');
-          sendInput.value = val;
-          sendInput.dispatchEvent(new Event('input'));
+          if (sendInput) {
+            sendInput.value = val;
+            sendInput.dispatchEvent(new Event('input'));
+          }
         });
       });
 
@@ -1141,13 +1295,18 @@
       // Send Transaction Handler
       document.getElementById('btnSend')?.addEventListener('click', sendTransaction);
 
-      log("Initializing new 24-word BIP-39 HD Wallet...");
+      log(`Initializing new 24-word BIP-39 HD Wallet (${getHostFromURL(currentNodeURL)})...`);
       await loadWallet();
     }
 
     async function loadWallet(mnemonicStr) {
       try {
-        activeHDWallet = await SDK.createHDWallet({ mnemonic: mnemonicStr });
+        const gapLimit = parseInt(document.getElementById('gapLimitInput')?.value || "10", 10);
+        activeHDWallet = await SDK.createHDWallet({
+          mnemonic: mnemonicStr,
+          nodeURL: currentNodeURL,
+          gapLimit: gapLimit
+        });
         const primaryAddr = await activeHDWallet.getReceiveAddress(0);
 
         document.getElementById('primaryAddress').textContent = primaryAddr;
@@ -1160,7 +1319,7 @@
         updateQRCode(primaryAddr);
         renderMnemonicGrid(activeHDWallet.mnemonic);
 
-        log(`Wallet Active. Address: ${primaryAddr}`);
+        log(`Wallet Active (${getHostFromURL(currentNodeURL)}). Address: ${primaryAddr}`);
         refreshBalance().catch(e => log("Balance refresh note: " + e.message));
       } catch (err) {
         log("Error creating wallet: " + err.message);
