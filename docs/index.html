@@ -771,7 +771,6 @@
         <div class="card" style="margin-bottom: 0;">
           <div class="card-header">
             <div class="card-title">💰 Account Balance</div>
-            <button class="btn-icon" id="btnRefreshBalance">🔄 Refresh</button>
           </div>
 
           <div class="hero-balance">
@@ -797,7 +796,6 @@
           <div class="card-header">
             <div class="card-title">📜 Transaction History</div>
             <div style="display: flex; gap: 0.5rem;">
-              <button class="btn-icon" id="btnRefreshHistory">🔄 Refresh</button>
               <button class="btn-icon" id="btnClearHistory">🗑️ Clear History</button>
             </div>
           </div>
@@ -941,7 +939,6 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">⛏️ Network PoW Requirements</div>
-            <button class="btn-icon" id="btnRefreshPowQuote">🔄 Refresh Quote</button>
           </div>
 
           <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.4;">
@@ -1287,7 +1284,7 @@
       loadAndRenderHistory();
     }
 
-    async function loadAndRenderHistory() {
+    async function loadAndRenderHistory(throwOnError = false) {
       let localItems = getSavedTxHistory();
 
       if (activeHDWallet && typeof activeHDWallet.history === 'function') {
@@ -1311,6 +1308,7 @@
           }
         } catch (e) {
           console.warn("Remote history query notice:", e.message);
+          if (throwOnError) throw e;
         }
       }
 
@@ -1511,7 +1509,7 @@
       if (btnNext) btnNext.disabled = addressCurrentPage >= totalPages;
     }
 
-    async function updatePowRequirementUI() {
+    async function updatePowRequirementUI(throwOnError = false) {
       const bitsEl = document.getElementById('powRequiredBitsVal');
       const diffEl = document.getElementById('powDifficultyVal');
       const timeEl = document.getElementById('powEstTimeVal');
@@ -1552,6 +1550,7 @@
       } catch (err) {
         if (bitsEl) bitsEl.textContent = '5 Bits';
         if (pillEl) pillEl.textContent = '⚡ Default Node PoW (5 Bits)';
+        if (throwOnError) throw err;
       }
     }
 
@@ -1720,7 +1719,8 @@
         const val = document.getElementById('nodeUrlInput')?.value;
         saveNodeURL(val);
         alert(`Node URL saved: ${currentNodeURL}`);
-        refreshBalance().catch(() => {});
+        currentRefreshIntervalMs = BASE_REFRESH_INTERVAL_MS;
+        runAutoRefreshCycle();
       });
 
       document.getElementById('btnTestNodeUrl')?.addEventListener('click', () => {
@@ -1798,7 +1798,7 @@
         }
       });
 
-      document.getElementById('btnRefreshBalance')?.addEventListener('click', refreshBalance);
+
 
       let currentHDDerivationIndex = 1;
 
@@ -1878,10 +1878,7 @@
         renderHistoryTable();
       });
 
-      // History Refresh & Clear Buttons
-      document.getElementById('btnRefreshHistory')?.addEventListener('click', () => {
-        loadAndRenderHistory();
-      });
+      // History Clear Button
 
       document.getElementById('btnClearHistory')?.addEventListener('click', () => {
         if (confirm("Are you sure you want to clear your local transaction history?")) {
@@ -1949,27 +1946,64 @@
         }
       });
 
-      // Refresh PoW Quote Button
-      document.getElementById('btnRefreshPowQuote')?.addEventListener('click', () => {
-        updatePowRequirementUI();
-      });
+
 
       // Send Transaction Handler
       document.getElementById('btnSend')?.addEventListener('click', sendTransaction);
 
-      log(`Initializing new 24-word BIP-39 HD Wallet (${getHostFromURL(currentNodeURL)})...`);
+      // Automatic refresh with exponential backoff in case of errors
+      const BASE_REFRESH_INTERVAL_MS = 3000;
+      const MAX_REFRESH_INTERVAL_MS = 60000;
+      const BACKOFF_FACTOR = 2;
+      let currentRefreshIntervalMs = BASE_REFRESH_INTERVAL_MS;
+      let autoRefreshTimerId = null;
+
+      async function runAutoRefreshCycle() {
+        let cycleHadError = false;
+
+        try {
+          await updatePowRequirementUI(true);
+        } catch (err) {
+          cycleHadError = true;
+        }
+
+        if (activeHDWallet) {
+          try {
+            await refreshBalance(true);
+          } catch (err) {
+            cycleHadError = true;
+          }
+
+          try {
+            await loadAndRenderHistory(true);
+          } catch (err) {
+            cycleHadError = true;
+          }
+        }
+
+        if (cycleHadError) {
+          currentRefreshIntervalMs = Math.min(currentRefreshIntervalMs * BACKOFF_FACTOR, MAX_REFRESH_INTERVAL_MS);
+          log(`Auto-refresh error detected. Backing off: next attempt in ${currentRefreshIntervalMs / 1000}s`);
+        } else {
+          if (currentRefreshIntervalMs > BASE_REFRESH_INTERVAL_MS) {
+            log("Auto-refresh recovered. Resetting interval to 3s.");
+          }
+          currentRefreshIntervalMs = BASE_REFRESH_INTERVAL_MS;
+        }
+
+        scheduleNextAutoRefresh();
+      }
+
+      function scheduleNextAutoRefresh() {
+        if (autoRefreshTimerId) clearTimeout(autoRefreshTimerId);
+        autoRefreshTimerId = setTimeout(runAutoRefreshCycle, currentRefreshIntervalMs);
+      }
+
+      scheduleNextAutoRefresh();
+      log("Automatic refresh enabled (3s base interval with exponential backoff on error).");
+
       updatePowRequirementUI();
       await loadWallet();
-
-      // Auto-refresh balance & history every 30 seconds
-      if (window._sikkaAutoRefresh) clearInterval(window._sikkaAutoRefresh);
-      window._sikkaAutoRefresh = setInterval(async () => {
-        if (activeHDWallet) {
-          await refreshBalance().catch(() => {});
-          await loadAndRenderHistory().catch(() => {});
-        }
-      }, 30000);
-      log("Auto-refresh enabled (30s interval).");
     }
 
     async function loadWallet(mnemonicStr) {
@@ -2035,7 +2069,7 @@
       });
     }
 
-    async function refreshBalance() {
+    async function refreshBalance(throwOnError = false) {
       if (!activeHDWallet) return;
       log("Scanning UTXOs across HD wallet addresses...");
       try {
@@ -2067,6 +2101,7 @@
         log(`Balance updated: ${balTotalSikka} Sikka total (${details.spendable} spendable, ${details.immature} immature)`);
       } catch (err) {
         log("Balance check notice: " + err.message);
+        if (throwOnError) throw err;
       }
     }
 
