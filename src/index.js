@@ -110,7 +110,25 @@ export class SikkaClient {
     return await this.api.getTransactionWeight(txid);
   }
 
-  async history(address, limit = 50) {
+  async addressSpace(gapLimit = 20) {
+    if (this.hdWallet && typeof this.hdWallet.addressSpace === 'function') {
+      return await this.hdWallet.addressSpace(gapLimit);
+    }
+    const targetAddress = this.wallet ? this.wallet.address : null;
+    return {
+      addresses: targetAddress ? [targetAddress] : [],
+      receiveAddresses: targetAddress ? [targetAddress] : [],
+      changeAddresses: [],
+      usedReceiveCount: targetAddress ? 1 : 0,
+      usedChangeCount: 0,
+      details: targetAddress ? [{ address: targetAddress, branch: 0, index: 0, balance: 0, utxo_count: 0 }] : []
+    };
+  }
+
+  async history(address, limit = 100, gapLimit = 20) {
+    if (!address && this.hdWallet && typeof this.hdWallet.history === 'function') {
+      return await this.hdWallet.history(limit, gapLimit);
+    }
     const targetAddress = address || (this.wallet && this.wallet.address);
     const addresses = targetAddress ? [targetAddress] : [];
     return await this.api.getSyncTail(addresses, limit);

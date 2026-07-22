@@ -1249,7 +1249,7 @@
 
       if (activeHDWallet && typeof activeHDWallet.history === 'function') {
         try {
-          const remoteHistory = await activeHDWallet.history(50);
+          const remoteHistory = await activeHDWallet.history(100, 20);
           if (Array.isArray(remoteHistory)) {
             remoteHistory.forEach(r => {
               const mapped = {

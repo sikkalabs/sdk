@@ -349,9 +349,97 @@ export class SikkaHDWallet {
     };
   }
 
-  async history(limit = 50) {
-    const used = await this.getUsedAddresses();
-    const addresses = used.map(a => a.address);
+  async addressSpace(gapLimit = 20) {
+    const receiveAddresses = [];
+    const changeAddresses = [];
+    const allAddresses = [];
+    const details = [];
+
+    // Scan Receive Branch (0)
+    let consecutiveUnusedReceive = 0;
+    for (let index = 0; consecutiveUnusedReceive < gapLimit; index++) {
+      const wallet = await this.getWalletForPath(0, 0, index);
+      let info;
+      try {
+        info = await this.api.getAddressInfo(wallet.address);
+      } catch (err) {
+        info = { balance: 0, utxo_count: 0, unspentOutputs: [] };
+      }
+
+      const hasActivity = (info.utxo_count > 0) || (BigInt(info.balance || 0) > 0n) || (info.unspentOutputs && info.unspentOutputs.length > 0);
+
+      if (hasActivity) {
+        consecutiveUnusedReceive = 0;
+        receiveAddresses.push(wallet.address);
+        allAddresses.push(wallet.address);
+        details.push({
+          address: wallet.address,
+          branch: 0,
+          index,
+          balance: info.balance,
+          utxo_count: info.utxo_count
+        });
+      } else {
+        consecutiveUnusedReceive++;
+      }
+    }
+
+    // Scan Change Branch (1)
+    let consecutiveUnusedChange = 0;
+    for (let index = 0; consecutiveUnusedChange < gapLimit; index++) {
+      const wallet = await this.getWalletForPath(0, 1, index);
+      let info;
+      try {
+        info = await this.api.getAddressInfo(wallet.address);
+      } catch (err) {
+        info = { balance: 0, utxo_count: 0, unspentOutputs: [] };
+      }
+
+      const hasActivity = (info.utxo_count > 0) || (BigInt(info.balance || 0) > 0n) || (info.unspentOutputs && info.unspentOutputs.length > 0);
+
+      if (hasActivity) {
+        consecutiveUnusedChange = 0;
+        changeAddresses.push(wallet.address);
+        allAddresses.push(wallet.address);
+        details.push({
+          address: wallet.address,
+          branch: 1,
+          index,
+          balance: info.balance,
+          utxo_count: info.utxo_count
+        });
+      } else {
+        consecutiveUnusedChange++;
+      }
+    }
+
+    // Default to primary address if no active addresses found
+    if (allAddresses.length === 0) {
+      const primaryWallet = await this.getWalletForPath(0, 0, 0);
+      allAddresses.push(primaryWallet.address);
+      receiveAddresses.push(primaryWallet.address);
+      details.push({
+        address: primaryWallet.address,
+        branch: 0,
+        index: 0,
+        balance: 0,
+        utxo_count: 0
+      });
+    }
+
+    return {
+      addresses: allAddresses,
+      receiveAddresses,
+      changeAddresses,
+      usedReceiveCount: receiveAddresses.length,
+      usedChangeCount: changeAddresses.length,
+      details
+    };
+  }
+
+  async history(limit = 100, gapLimit = 20) {
+    const space = await this.addressSpace(gapLimit);
+    const addresses = space.addresses;
     if (addresses.length === 0) {
       const primary = await this.getReceiveAddress(0);
       addresses.push(primary);
