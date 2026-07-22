@@ -25,8 +25,11 @@ Provides full wallet management, 24-word BIP-39 mnemonic seed phrases, Hierarchi
 Install directly via `npm`, `yarn`, `pnpm`, or `bun`:
 
 ```bash
-# Install package from npm:
-npm install @sikkalabs/sdk
+# Install directly from GitHub:
+npm install sikkalabs/sdk
+
+# Or install a specific release tag / branch:
+npm install sikkalabs/sdk#0.0.1
 ```
 
 ---
@@ -201,6 +204,24 @@ self.onmessage = async (e) => {
   const result = await client.send(amount, recipient);
   self.postMessage({ success: true, result });
 };
+```
+
+---
+
+## 🌐 Web Wallet UI Example
+
+An interactive, post-quantum web wallet UI demo is included in [public/index.html](file:///home/jesus/Projects/sikkalabs/sdk/public/index.html).
+
+It loads the SDK via `https://esm.sh/gh/sikkalabs/sdk` or `https://cdn.jsdelivr.net/gh/sikkalabs/sdk@main/src/index.js` (with fallback to local source) and demonstrates:
+- 24-word seed generation & wallet restoration.
+- HD address derivation (`account/branch/index`).
+- Real-time balance queries across spendable UTXOs.
+- Client-side SHA3-256 Proof-of-Work mining & transaction submission.
+- Dynamic Sikka $\leftrightarrow$ Chillar unit conversion.
+
+To launch locally:
+```bash
+npm run serve
 ```
 
 ---

@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ Sikka Post-Quantum Web Wallet</title>
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Import Map for Browser Resolution of Dependencies -->
+  <script type="importmap">
+  {
+    "imports": {
+      "@noble/hashes/sha3.js": "https://esm.sh/@noble/hashes@2.2.0/sha3",
+      "@noble/hashes/hkdf.js": "https://esm.sh/@noble/hashes@2.2.0/hkdf",
+      "mldsa-wasm": "https://esm.sh/mldsa-wasm@0.0.4?target=es2022"
+    }
+  }
+  </script>
+  
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at 15% 15%, #181c2e 0%, #0d0f19 50%, #080910 100%);
+      --card-bg: rgba(22, 26, 46, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-border-hover: rgba(79, 172, 254, 0.4);
+      --primary-cyan: #00f2fe;
+      --primary-blue: #4facfe;
+      --accent-purple: #7f53ac;
+      --accent-pink: #647deb;
+      --success-green: #10b981;
+      --warning-amber: #f59e0b;
+      --danger-red: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-heading: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* Background Ambient Glows */
+    .glow-sphere-1 {
+      position: absolute;
+      top: -100px;
+      left: -100px;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(79, 172, 254, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .glow-sphere-2 {
+      position: absolute;
+      bottom: -150px;
+      right: -100px;
+      width: 550px;
+      height: 550px;
+      background: radial-gradient(circle, rgba(127, 83, 172, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 10;
+      border-bottom: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      background: rgba(13, 15, 25, 0.6);
+      padding: 1.25rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--primary-cyan), var(--primary-blue));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0, 242, 254, 0.35);
+    }
+
+    .brand-title {
+      font-family: var(--font-heading);
+      font-size: 1.4rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff 30%, var(--primary-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-badges {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--card-border);
+    }
+
+    .badge-quantum {
+      background: rgba(127, 83, 172, 0.2);
+      border-color: rgba(127, 83, 172, 0.4);
+      color: #c084fc;
+    }
+
+    .badge-node {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: var(--success-green);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--success-green);
+      box-shadow: 0 0 10px var(--success-green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    main {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 900px) {
+      main {
+        grid-template-columns: 1.2fr 0.8fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 1.75rem;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .card:hover {
+      border-color: var(--card-border-hover);
+      box-shadow: 0 12px 40px rgba(0, 242, 254, 0.08);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Balance Hero Banner */
+    .hero-balance {
+      background: linear-gradient(135deg, rgba(79, 172, 254, 0.12), rgba(127, 83, 172, 0.12));
+      border: 1px solid rgba(79, 172, 254, 0.25);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .balance-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .balance-amount {
+      font-family: var(--font-heading);
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.1;
+    }
+
+    .balance-sub {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--primary-cyan);
+      margin-top: 0.4rem;
+    }
+
+    /* Address Pill & Copy */
+    .address-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .address-text {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      word-break: break-all;
+    }
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 0.4rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-icon:hover {
+      background: var(--primary-blue);
+      border-color: var(--primary-blue);
+      color: #fff;
+    }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 0.85rem 1.25rem;
+      border-radius: 12px;
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.25 ease;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+      color: #ffffff;
+      box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(79, 172, 254, 0.45);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Inputs */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      border-color: var(--primary-cyan);
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+    }
+
+    /* Mnemonic Word Grid */
+    .mnemonic-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1rem;
+      max-height: 220px;
+      overflow-y: auto;
+      margin-bottom: 1rem;
+    }
+
+    @media (min-width: 600px) {
+      .mnemonic-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .word-badge {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      padding: 0.35rem 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .word-num {
+      color: var(--text-muted);
+      font-size: 0.65rem;
+      user-select: none;
+    }
+
+    .word-val {
+      color: #f1f5f9;
+      font-weight: 500;
+    }
+
+    /* Mining PoW Progress Box */
+    .pow-box {
+      background: rgba(0, 242, 254, 0.05);
+      border: 1px dashed rgba(0, 242, 254, 0.3);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .pow-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--primary-cyan);
+      margin-bottom: 0.5rem;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary-cyan), var(--primary-blue));
+      transition: width 0.3s ease;
+    }
+
+    /* Logs & Activity */
+    .log-box {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #a7f3d0;
+      max-height: 140px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    footer {
+      border-top: 1px solid var(--card-border);
+      padding: 1.25rem 2rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: rgba(13, 15, 25, 0.8);
+    }
+
+    footer a {
+      color: var(--primary-cyan);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-sphere-1"></div>
+  <div class="glow-sphere-2"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div>
+        <div class="brand-title">Sikka Wallet</div>
+        <div class="brand-subtitle">NIST ML-DSA-87 Post-Quantum Vault</div>
+      </div>
+    </div>
+    <div class="header-badges">
+      <div class="badge badge-quantum">🛡️ ML-DSA-87 Quantum Safe</div>
+      <div class="badge badge-node">
+        <div class="status-dot"></div>
+        <span id="nodeUrlLabel">1.sikkalabs.com</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <main>
+    <!-- Left Column: Primary Wallet Controls & Send -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <!-- Hero Card: Wallet Overview -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">💰 Account Balance</div>
+          <button class="btn-icon" id="btnRefreshBalance">🔄 Refresh</button>
+        </div>
+
+        <div class="hero-balance">
+          <div class="balance-label">Total Spendable Balance</div>
+          <div class="balance-amount" id="balanceSikka">0.00 <span style="font-size: 1.2rem; font-weight: 500;">SIKKA</span></div>
+          <div class="balance-sub" id="balanceChillar">0 chillar</div>
+        </div>
+
+        <div class="form-label">Primary Receive Address (Bech32m)</div>
+        <div class="address-box">
+          <span class="address-text" id="primaryAddress">Generating wallet...</span>
+          <button class="btn-icon" id="btnCopyAddress">Copy</button>
+        </div>
+
+        <div class="button-group">
+          <button class="btn btn-secondary" id="btnNewWallet">✨ New 24-Word Seed</button>
+          <button class="btn btn-secondary" id="btnToggleSeed">👁️ Show / Hide Seed</button>
+        </div>
+
+        <!-- Hidden Seed Container -->
+        <div id="seedContainer" style="display: none;">
+          <div class="form-label">24-Word BIP-39 Seed Mnemonic</div>
+          <div class="mnemonic-grid" id="mnemonicGrid"></div>
+        </div>
+      </div>
+
+      <!-- Card: Send Sikka (Auto PoW Mining) -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">💸 Send Sikka</div>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Client-Side SHA3-256 PoW</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Recipient Address</label>
+          <input type="text" class="form-input" id="sendRecipient" placeholder="sikka1..." />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Amount (in Sikka)</label>
+          <input type="text" class="form-input" id="sendAmount" placeholder="e.g. 1.5" />
+          <div style="font-size: 0.75rem; color: var(--primary-cyan); margin-top: 0.3rem;" id="sendAmountChillar">
+            = 0 chillar
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="btnSend">🚀 Mine PoW & Broadcast Transaction</button>
+
+        <!-- Mining Progress Indicator -->
+        <div class="pow-box" id="powBox">
+          <div class="pow-header">
+            <span id="powStatusText">⛏️ Mining Proof-of-Work Nonce...</span>
+            <span id="powBitsText">0 bits</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="powProgressBar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: HD Manager, Unit Converter & Logs -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <!-- Card: Import Custom Mnemonic -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔑 Import Wallet</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">BIP-39 Mnemonic Phrase (12-24 Words)</label>
+          <textarea class="form-textarea" id="importMnemonicInput" rows="3" placeholder="enter 24 word seed phrase..."></textarea>
+        </div>
+        <button class="btn btn-secondary" id="btnImportMnemonic">📥 Restore Wallet</button>
+      </div>
+
+      <!-- Card: Hierarchical Deterministic (HD) Derivation -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🌿 HD Address Manager</div>
+          <span class="badge" style="background: rgba(255,255,255,0.05);">Gap Limit: 10</span>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Derive deterministic child addresses (`account/branch/index`) from master seed.
+        </div>
+        <button class="btn btn-secondary" id="btnGetNewAddress" style="margin-bottom: 1rem;">
+          ➕ Generate Next Clean Receive Address
+        </button>
+
+        <div class="form-label">Latest Derived Address</div>
+        <div class="address-box">
+          <span class="address-text" id="hdNextAddress" style="font-size: 0.78rem;">Click button above to derive</span>
+          <button class="btn-icon" id="btnCopyHDAddress">Copy</button>
+        </div>
+      </div>
+
+      <!-- Card: Unit Converter -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🧮 Sikka <-> Chillar Converter</div>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+          1 Sikka = 10,000,000,000 chillar (10 decimal places)
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sikka Amount</label>
+          <input type="text" class="form-input" id="calcSikka" value="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Chillar Amount</label>
+          <input type="text" class="form-input" id="calcChillar" value="10000000000" />
+        </div>
+      </div>
+
+      <!-- Card: System Activity Log -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 Console Activity Log</div>
+        </div>
+        <div class="log-box" id="logBox">Initializing Sikka Post-Quantum SDK...</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    Built with ⚡ by <a href="https://github.com/sikkalabs" target="_blank">Sikka Labs</a> &bull; Post-Quantum Cryptography &bull; ISC License
+  </footer>
+
+  <!-- Script Module Loading SDK via local or esm.sh -->
+  <script type="module">
+    let SDK;
+
+    function log(msg) {
+      const logBox = document.getElementById('logBox');
+      const time = new Date().toLocaleTimeString();
+      logBox.textContent = `[${time}] ${msg}\n` + logBox.textContent;
+    }
+
+    async function initSDK() {
+      log("Loading SDK module...");
+      const possibleTargets = [
+        './src/index.js',
+        '../src/index.js',
+        '/src/index.js',
+        'https://cdn.jsdelivr.net/gh/sikkalabs/sdk@main/src/index.js',
+        'https://esm.sh/gh/sikkalabs/sdk?bundle&target=es2022'
+      ];
+
+      for (const target of possibleTargets) {
+        try {
+          SDK = await import(target);
+          log("Loaded SDK from: " + target);
+          startWalletApp();
+          return;
+        } catch (e) {
+          console.warn("Failed loading SDK from " + target + ":", e.message);
+        }
+      }
+
+      log("ERROR: Failed to load SDK module from all local and GitHub CDN sources.");
+    }
+
+    let activeHDWallet = null;
+
+    async function startWalletApp() {
+      log("Initializing new 24-word BIP-39 HD Wallet...");
+      await loadWallet();
+
+      // Setup Event Listeners
+      document.getElementById('btnNewWallet').addEventListener('click', async () => {
+        log("Generating fresh 24-word seed phrase...");
+        await loadWallet();
+      });
+
+      document.getElementById('btnImportMnemonic').addEventListener('click', async () => {
+        const text = document.getElementById('importMnemonicInput').value.trim();
+        if (!text) {
+          alert("Please enter a valid seed phrase.");
+          return;
+        }
+        if (!SDK.isValidMnemonic(text)) {
+          alert("Invalid BIP-39 mnemonic phrase!");
+          return;
+        }
+        log("Restoring wallet from provided seed phrase...");
+        await loadWallet(text);
+      });
+
+      document.getElementById('btnToggleSeed').addEventListener('click', () => {
+        const container = document.getElementById('seedContainer');
+        container.style.display = container.style.display === 'none' ? 'block' : 'none';
+      });
+
+      document.getElementById('btnCopyAddress').addEventListener('click', () => {
+        const addr = document.getElementById('primaryAddress').textContent;
+        navigator.clipboard.writeText(addr);
+        alert("Address copied to clipboard!");
+      });
+
+      document.getElementById('btnCopyHDAddress').addEventListener('click', () => {
+        const addr = document.getElementById('hdNextAddress').textContent;
+        if (addr && !addr.includes('Click')) {
+          navigator.clipboard.writeText(addr);
+          alert("Address copied to clipboard!");
+        }
+      });
+
+      document.getElementById('btnRefreshBalance').addEventListener('click', refreshBalance);
+
+      document.getElementById('btnGetNewAddress').addEventListener('click', async () => {
+        if (!activeHDWallet) return;
+        log("Deriving next clean receive address...");
+        const newAddr = await activeHDWallet.getNewUnusedAddress();
+        document.getElementById('hdNextAddress').textContent = newAddr;
+        log(`Derived new address: ${newAddr}`);
+      });
+
+      // Unit Converter Listeners
+      const calcSikka = document.getElementById('calcSikka');
+      const calcChillar = document.getElementById('calcChillar');
+
+      calcSikka.addEventListener('input', () => {
+        try {
+          const chillar = SDK.toChillar(calcSikka.value || "0");
+          calcChillar.value = chillar.toString();
+        } catch (e) {
+          calcChillar.value = "Invalid input";
+        }
+      });
+
+      calcChillar.addEventListener('input', () => {
+        try {
+          const sikka = SDK.toSikka(calcChillar.value || "0");
+          calcSikka.value = sikka;
+        } catch (e) {
+          calcSikka.value = "Invalid input";
+        }
+      });
+
+      // Send Amount Listener
+      const sendAmountInput = document.getElementById('sendAmount');
+      const sendAmountChillar = document.getElementById('sendAmountChillar');
+
+      sendAmountInput.addEventListener('input', () => {
+        try {
+          const chillar = SDK.toChillar(sendAmountInput.value || "0");
+          sendAmountChillar.textContent = `= ${chillar.toLocaleString()} chillar`;
+        } catch (e) {
+          sendAmountChillar.textContent = "= Invalid amount";
+        }
+      });
+
+      // Send Transaction Handler
+      document.getElementById('btnSend').addEventListener('click', sendTransaction);
+    }
+
+    async function loadWallet(mnemonicStr) {
+      try {
+        activeHDWallet = await SDK.createHDWallet({ mnemonic: mnemonicStr });
+        const primaryAddr = await activeHDWallet.getReceiveAddress(0);
+
+        document.getElementById('primaryAddress').textContent = primaryAddr;
+        renderMnemonicGrid(activeHDWallet.mnemonic);
+
+        log(`Wallet Active. Address: ${primaryAddr}`);
+        await refreshBalance();
+      } catch (err) {
+        log("Error creating wallet: " + err.message);
+      }
+    }
+
+    function renderMnemonicGrid(mnemonic) {
+      const words = mnemonic.split(' ');
+      const grid = document.getElementById('mnemonicGrid');
+      grid.innerHTML = '';
+
+      words.forEach((w, idx) => {
+        const item = document.createElement('div');
+        item.className = 'word-badge';
+        item.innerHTML = `<span class="word-num">${idx + 1}.</span> <span class="word-val">${w}</span>`;
+        grid.appendChild(item);
+      });
+    }
+
+    async function refreshBalance() {
+      if (!activeHDWallet) return;
+      log("Scanning UTXOs across HD wallet addresses...");
+      try {
+        const balChillar = await activeHDWallet.balance();
+        const balSikka = SDK.toSikka(balChillar);
+
+        document.getElementById('balanceSikka').innerHTML = `${balSikka} <span style="font-size: 1.2rem; font-weight: 500;">SIKKA</span>`;
+        document.getElementById('balanceChillar').textContent = `${BigInt(balChillar).toLocaleString()} chillar`;
+        log(`Balance updated: ${balSikka} Sikka (${balChillar} chillar)`);
+      } catch (err) {
+        log("Balance check notice: " + err.message);
+      }
+    }
+
+    async function sendTransaction() {
+      const recipient = document.getElementById('sendRecipient').value.trim();
+      const amountStr = document.getElementById('sendAmount').value.trim();
+
+      if (!recipient) {
+        alert("Please enter a recipient address");
+        return;
+      }
+
+      try {
+        SDK.validateAddress(recipient);
+      } catch (e) {
+        alert("Invalid Sikka address: " + e.message);
+        return;
+      }
+
+      let amountChillar;
+      try {
+        amountChillar = SDK.toChillar(amountStr);
+      } catch (e) {
+        alert("Invalid send amount");
+        return;
+      }
+
+      const powBox = document.getElementById('powBox');
+      const powProgressBar = document.getElementById('powProgressBar');
+      const powStatusText = document.getElementById('powStatusText');
+      const powBitsText = document.getElementById('powBitsText');
+
+      powBox.style.display = 'block';
+      powProgressBar.style.width = '20%';
+      powStatusText.textContent = '⛏️ Fetching PoW Quote from Node...';
+
+      try {
+        log(`Initiating send: ${amountStr} Sikka -> ${recipient}...`);
+        
+        powProgressBar.style.width = '60%';
+        powStatusText.textContent = '⛏️ Mining SHA3-256 PoW Nonce...';
+        
+        const result = await activeHDWallet.send(amountChillar, recipient);
+        
+        powProgressBar.style.width = '100%';
+        powStatusText.textContent = '✅ Transaction Broadcast Successfully!';
+        log(`Transaction Success! TxID: ${result.txID}`);
+        
+        alert(`Transaction Sent Successfully!\nTxID: ${result.txID}`);
+        await refreshBalance();
+      } catch (err) {
+        powStatusText.textContent = '❌ Transaction Failed';
+        log(`Send Failed: ${err.message}`);
+        alert("Transaction Failed: " + err.message);
+      }
+    }
+
+    initSDK();
+  </script>
+</body>
+</html>
