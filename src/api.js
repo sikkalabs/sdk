@@ -165,9 +165,13 @@ export class APIClient {
 
   async getSyncTail(addresses = [], limit = 50) {
     let url = `${this.nodeURL}/v1/sync/tail?limit=${limit}`;
-    if (addresses && addresses.length > 0) {
-      const addrs = Array.isArray(addresses) ? addresses.join(',') : String(addresses);
-      url += `&addresses=${encodeURIComponent(addrs)}`;
+    if (addresses) {
+      const list = Array.isArray(addresses) ? addresses : [addresses];
+      for (const addr of list) {
+        if (addr) {
+          url += `&addresses=${encodeURIComponent(addr)}`;
+        }
+      }
     }
     const response = await fetchFromNode('GET', url);
     if (response.status !== 200) {

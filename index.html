@@ -1632,28 +1632,28 @@
 
           if (Array.isArray(remoteItems)) {
             remoteItems.forEach(tx => {
-              const txid = tx.hash || tx.id || tx.txid || ('tx_' + Math.random().toString(36).substring(2, 9));
+              const txid = tx.id || tx.hash || tx.txid || ('tx_' + Math.random().toString(36).substring(2, 9));
               
               let isWalletOutput = false;
               let mainAddress = '';
-              let sikkaAmount = '0';
+              let walletVal = 0n;
 
               if (tx.outputs) {
                 for (const out of tx.outputs) {
                   if (addressSet.has(out.address)) {
                     isWalletOutput = true;
-                    mainAddress = out.address;
-                    sikkaAmount = SDK ? SDK.toSikka(out.value) : '0';
-                    break;
+                    if (!mainAddress) mainAddress = out.address;
+                    walletVal += BigInt(out.value || 0);
                   }
                 }
                 if (!mainAddress && tx.outputs[0]) {
                   mainAddress = tx.outputs[0].address;
-                  sikkaAmount = SDK ? SDK.toSikka(tx.outputs[0].value) : '0';
+                  walletVal = BigInt(tx.outputs[0].value || 0);
                 }
               }
 
               const type = isWalletOutput ? 'received' : 'sent';
+              const sikkaAmount = SDK ? SDK.toSikka(walletVal) : '0';
 
               const mapped = {
                 txID: txid,
