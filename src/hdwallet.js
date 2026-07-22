@@ -125,6 +125,38 @@ export class SikkaHDWallet {
     return await this.getChangeAddress(pathOrIndex);
   }
 
+  getStorageKey() {
+    let hash = 0;
+    if (this.mnemonic) {
+      for (let i = 0; i < this.mnemonic.length; i++) {
+        hash = ((hash << 5) - hash) + this.mnemonic.charCodeAt(i);
+        hash |= 0;
+      }
+    }
+    return `sikka_used_indices_${Math.abs(hash)}`;
+  }
+
+  getKnownUsedIndices() {
+    try {
+      const key = this.getStorageKey();
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : { receive: [], change: [] };
+    } catch {
+      return { receive: [], change: [] };
+    }
+  }
+
+  saveKnownUsedIndex(branch, index) {
+    try {
+      const known = this.getKnownUsedIndices();
+      const list = branch === 0 ? known.receive : known.change;
+      if (!list.includes(index)) {
+        list.push(index);
+        localStorage.setItem(this.getStorageKey(), JSON.stringify(known));
+      }
+    } catch {}
+  }
+
   async scanAddresses() {
     const allUtxos = [];
     const usedAddresses = [];
@@ -132,10 +164,11 @@ export class SikkaHDWallet {
     let nextChangeIndex = 0;
 
     const now = Math.floor(Date.now() / 1000);
+    const known = this.getKnownUsedIndices();
 
     // Scan Receive Addresses (Branch 0)
     let consecutiveUnusedReceive = 0;
-    for (let index = 0; consecutiveUnusedReceive < this.gapLimit; index++) {
+    for (let index = 0; consecutiveUnusedReceive < this.gapLimit || known.receive.includes(index); index++) {
       const wallet = await this.getWalletForPath(0, 0, index);
       let info;
       try {
@@ -144,9 +177,23 @@ export class SikkaHDWallet {
         info = { balance: 0, utxo_count: 0, unspentOutputs: [] };
       }
 
-      const hasActivity = (info.utxo_count > 0) || (BigInt(info.balance || 0) > 0n) || (info.unspentOutputs && info.unspentOutputs.length > 0);
+      const hasUTXOs = (info.utxo_count > 0) || (BigInt(info.balance || 0) > 0n) || (info.unspentOutputs && info.unspentOutputs.length > 0);
+      const isKnownUsed = known.receive.includes(index);
 
-      if (hasActivity) {
+      let hasHistory = false;
+      if (!hasUTXOs && !isKnownUsed) {
+        try {
+          const tail = await this.api.getSyncTail([wallet.address], 1);
+          if (Array.isArray(tail) && tail.length > 0) {
+            hasHistory = true;
+          }
+        } catch (e) {}
+      }
+
+      const isUsed = hasUTXOs || isKnownUsed || hasHistory;
+
+      if (isUsed) {
+        this.saveKnownUsedIndex(0, index);
         consecutiveUnusedReceive = 0;
         nextReceiveIndex = index + 1;
         usedAddresses.push({
@@ -159,12 +206,16 @@ export class SikkaHDWallet {
 
         if (info.unspentOutputs) {
           for (const utxo of info.unspentOutputs) {
-            const isImmature = utxo.created_at && (now < Number(utxo.created_at) + MIN_UTXO_MATURITY_SECONDS);
+            const createdAt = Number(utxo.created_at || now);
+            const isImmature = utxo.created_at && (now < createdAt + MIN_UTXO_MATURITY_SECONDS);
+            const remainingMaturitySeconds = isImmature ? Math.max(0, (createdAt + MIN_UTXO_MATURITY_SECONDS) - now) : 0;
+
             allUtxos.push({
               ...utxo,
               address: wallet.address,
               walletObj: wallet,
-              isImmature: Boolean(isImmature)
+              isImmature: Boolean(isImmature),
+              remainingMaturitySeconds
             });
           }
         }
@@ -175,7 +226,7 @@ export class SikkaHDWallet {
 
     // Scan Change Addresses (Branch 1)
     let consecutiveUnusedChange = 0;
-    for (let index = 0; consecutiveUnusedChange < this.gapLimit; index++) {
+    for (let index = 0; consecutiveUnusedChange < this.gapLimit || known.change.includes(index); index++) {
       const wallet = await this.getWalletForPath(0, 1, index);
       let info;
       try {
@@ -184,9 +235,23 @@ export class SikkaHDWallet {
         info = { balance: 0, utxo_count: 0, unspentOutputs: [] };
       }
 
-      const hasActivity = (info.utxo_count > 0) || (BigInt(info.balance || 0) > 0n) || (info.unspentOutputs && info.unspentOutputs.length > 0);
+      const hasUTXOs = (info.utxo_count > 0) || (BigInt(info.balance || 0) > 0n) || (info.unspentOutputs && info.unspentOutputs.length > 0);
+      const isKnownUsed = known.change.includes(index);
 
-      if (hasActivity) {
+      let hasHistory = false;
+      if (!hasUTXOs && !isKnownUsed) {
+        try {
+          const tail = await this.api.getSyncTail([wallet.address], 1);
+          if (Array.isArray(tail) && tail.length > 0) {
+            hasHistory = true;
+          }
+        } catch (e) {}
+      }
+
+      const isUsed = hasUTXOs || isKnownUsed || hasHistory;
+
+      if (isUsed) {
+        this.saveKnownUsedIndex(1, index);
         consecutiveUnusedChange = 0;
         nextChangeIndex = index + 1;
         usedAddresses.push({
@@ -199,12 +264,16 @@ export class SikkaHDWallet {
 
         if (info.unspentOutputs) {
           for (const utxo of info.unspentOutputs) {
-            const isImmature = utxo.created_at && (now < Number(utxo.created_at) + MIN_UTXO_MATURITY_SECONDS);
+            const createdAt = Number(utxo.created_at || now);
+            const isImmature = utxo.created_at && (now < createdAt + MIN_UTXO_MATURITY_SECONDS);
+            const remainingMaturitySeconds = isImmature ? Math.max(0, (createdAt + MIN_UTXO_MATURITY_SECONDS) - now) : 0;
+
             allUtxos.push({
               ...utxo,
               address: wallet.address,
               walletObj: wallet,
-              isImmature: Boolean(isImmature)
+              isImmature: Boolean(isImmature),
+              remainingMaturitySeconds
             });
           }
         }
@@ -212,6 +281,9 @@ export class SikkaHDWallet {
         consecutiveUnusedChange++;
       }
     }
+
+    this.nextReceiveIndex = nextReceiveIndex;
+    this.nextChangeIndex = nextChangeIndex;
 
     return {
       utxos: allUtxos,
@@ -245,13 +317,44 @@ export class SikkaHDWallet {
     return await this.getUsedAddresses();
   }
 
-  async balance() {
+  async balanceDetails() {
     const scan = await this.scanAddresses();
     let total = 0n;
+    let spendable = 0n;
+    let immature = 0n;
+    let immatureCount = 0;
+    let minMaturityRemainingSeconds = Infinity;
+
     for (const utxo of scan.utxos) {
-      total += BigInt(utxo.value);
+      const val = BigInt(utxo.value);
+      total += val;
+      if (utxo.isImmature) {
+        immature += val;
+        immatureCount++;
+        if (utxo.remainingMaturitySeconds < minMaturityRemainingSeconds) {
+          minMaturityRemainingSeconds = utxo.remainingMaturitySeconds;
+        }
+      } else {
+        spendable += val;
+      }
     }
-    return total;
+
+    if (minMaturityRemainingSeconds === Infinity) {
+      minMaturityRemainingSeconds = 0;
+    }
+
+    return {
+      total,
+      spendable,
+      immature,
+      immatureCount,
+      minMaturityRemainingSeconds
+    };
+  }
+
+  async balance() {
+    const details = await this.balanceDetails();
+    return details.total;
   }
 
   async send(amount, recipientAddr) {

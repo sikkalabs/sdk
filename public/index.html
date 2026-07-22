@@ -2039,12 +2039,32 @@
       if (!activeHDWallet) return;
       log("Scanning UTXOs across HD wallet addresses...");
       try {
-        const balChillar = await activeHDWallet.balance();
-        const balSikka = SDK.toSikka(balChillar);
+        const details = typeof activeHDWallet.balanceDetails === 'function' 
+          ? await activeHDWallet.balanceDetails() 
+          : { total: await activeHDWallet.balance(), spendable: await activeHDWallet.balance(), immature: 0n, immatureCount: 0, minMaturityRemainingSeconds: 0 };
+        
+        const balTotalSikka = SDK.toSikka(details.total);
+        const balSpendableSikka = SDK.toSikka(details.spendable);
+        const balImmatureSikka = SDK.toSikka(details.immature);
 
-        document.getElementById('balanceSikka').innerHTML = `${balSikka} <span style="font-size: 1.2rem; font-weight: 600;">SIKKA</span>`;
-        document.getElementById('balanceChillar').textContent = `${BigInt(balChillar).toLocaleString()} chillar`;
-        log(`Balance updated: ${balSikka} Sikka (${balChillar} chillar)`);
+        const elSikka = document.getElementById('balanceSikka');
+        const elChillar = document.getElementById('balanceChillar');
+
+        if (elSikka) {
+          elSikka.innerHTML = `${balTotalSikka} <span style="font-size: 1.2rem; font-weight: 600;">SIKKA</span>`;
+        }
+        
+        if (elChillar) {
+          if (details.immature > 0n) {
+            const mins = Math.floor(details.minMaturityRemainingSeconds / 60);
+            const secs = details.minMaturityRemainingSeconds % 60;
+            const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+            elChillar.innerHTML = `Spendable: <strong>${balSpendableSikka} SIKKA</strong> &bull; <span style="color: var(--text-muted);">⏳ Pending Maturity: ${balImmatureSikka} SIKKA (${timeStr})</span>`;
+          } else {
+            elChillar.textContent = `${BigInt(details.total).toLocaleString()} chillar (${balSpendableSikka} SIKKA spendable)`;
+          }
+        }
+        log(`Balance updated: ${balTotalSikka} Sikka total (${details.spendable} spendable, ${details.immature} immature)`);
       } catch (err) {
         log("Balance check notice: " + err.message);
       }
