@@ -1600,27 +1600,25 @@
     }
 
     async function initSDK() {
-      log("Loading SDK module...");
-      const possibleTargets = [
-        './src/index.js',
-        '../src/index.js',
-        '/src/index.js',
+      log("Loading Sikka SDK from GitHub CDN...");
+      const cdnTargets = [
         'https://cdn.jsdelivr.net/gh/sikkalabs/sdk@main/src/index.js',
-        'https://esm.sh/gh/sikkalabs/sdk?bundle&target=es2022'
+        'https://esm.sh/gh/sikkalabs/sdk@main/src/index.js',
+        'https://raw.githack.com/sikkalabs/sdk/main/src/index.js'
       ];
 
-      for (const target of possibleTargets) {
+      for (const target of cdnTargets) {
         try {
           SDK = await import(target);
-          log("Loaded SDK from: " + target);
+          log("Loaded SDK module from GitHub CDN: " + target);
           await startWalletApp();
           return;
         } catch (e) {
-          // Continue to next fallback source if target not found
+          console.warn("CDN import notice for " + target + ":", e.message);
         }
       }
 
-      log("ERROR: Failed to load SDK module from any source.");
+      log("ERROR: Failed to load Sikka SDK module from GitHub CDN.");
     }
 
     let activeHDWallet = null;
