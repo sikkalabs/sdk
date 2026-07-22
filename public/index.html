@@ -729,6 +729,20 @@
               <strong>ℹ️ Security Notice:</strong> Keep your 24-word seed phrase safe. Anyone with access to this phrase can control your funds.
             </div>
           </div>
+
+          <!-- Card: Import Existing Wallet -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📥 Import Existing Wallet</div>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">BIP-39 Mnemonic Phrase (12-24 Words)</label>
+              <textarea class="form-textarea" id="importMnemonicInput" rows="3" placeholder="enter 24 word seed phrase..."></textarea>
+            </div>
+
+            <button class="btn btn-secondary" id="btnImportMnemonic">📥 Restore Wallet</button>
+          </div>
         </div>
       </div>
     </div>
@@ -875,26 +889,21 @@
           </table>
         </div>
 
-        <!-- Right: Import Mnemonic & HD Manager -->
+        <!-- Right: SDK Specification Details -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">📥 Import Existing Wallet</div>
+            <div class="card-title">⚙️ SDK Cryptography & Specs</div>
           </div>
-          
-          <div class="form-group">
-            <label class="form-label">BIP-39 Mnemonic Phrase (12-24 Words)</label>
-            <textarea class="form-textarea" id="importMnemonicInput" rows="3" placeholder="enter 24 word seed phrase..."></textarea>
-          </div>
-
-          <button class="btn btn-secondary" id="btnImportMnemonic">📥 Restore Wallet</button>
-
-          <hr style="border: none; border-top: 1px solid var(--border-light); margin: 1.5rem 0;" />
-
-          <div class="card-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">⚙️ SDK Details</div>
-          <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
-            • <strong>Algorithm:</strong> NIST ML-DSA-87 (DILITHIUM)<br>
-            • <strong>Derivation Path:</strong> m/44'/9999'/0'/0/i<br>
-            • <strong>Format:</strong> Bech32m Address Standard
+          <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.8;">
+            <p style="margin-bottom: 0.75rem;">
+              The Sikka SDK is built ground-up for post-quantum security using NIST-standardized lattice cryptography.
+            </p>
+            <ul style="padding-left: 1.25rem; margin-bottom: 0.5rem;">
+              <li><strong>Algorithm:</strong> NIST ML-DSA-87 (Dilithium Level 5)</li>
+              <li><strong>Derivation Standard:</strong> BIP-32/44 HD path (<code style="font-family: var(--font-mono);">m/44'/9999'/0'/0/i</code>)</li>
+              <li><strong>Address Encoding:</strong> Bech32m checksummed format (<code style="font-family: var(--font-mono);">sikka1...</code>)</li>
+              <li><strong>Mining Mechanism:</strong> SHA3-256 Proof-of-Work nonce calculation</li>
+            </ul>
           </div>
         </div>
       </div>
