@@ -1042,15 +1042,28 @@
       resultDiv.innerHTML = `⏳ Testing connection to <code>${url}</code>...`;
 
       const startTime = performance.now();
+      const cleanUrl = url.replace(/\/$/, '');
+
       try {
-        const cleanUrl = url.replace(/\/$/, '');
-        const res = await fetch(`${cleanUrl}/v1/address/sikka1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq?limit=1`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        });
+        if (SDK && SDK.APIClient) {
+          const tempClient = new SDK.APIClient(cleanUrl);
+          if (typeof tempClient.getNodeStatus === 'function') {
+            await tempClient.getNodeStatus();
+            const latency = Math.round(performance.now() - startTime);
+            resultDiv.style.background = '#f4f4f5';
+            resultDiv.style.border = '1px solid #000000';
+            resultDiv.style.color = '#000000';
+            resultDiv.innerHTML = `<strong>✅ Node Connected Successfully!</strong><br>Latency: ${latency}ms<br>Endpoint: <code>${cleanUrl}</code>`;
+            log(`Node connection test passed for ${cleanUrl} (${latency}ms)`);
+            return;
+          }
+        }
+
+        // Direct fetch without custom headers to avoid unnecessary preflight CORS blocks
+        const res = await fetch(`${cleanUrl}/v1/status`, { method: 'GET' });
         const latency = Math.round(performance.now() - startTime);
 
-        if (res.ok || res.status === 404 || res.status === 400 || res.status === 200) {
+        if (res.ok || res.status === 200 || res.status === 404) {
           resultDiv.style.background = '#f4f4f5';
           resultDiv.style.border = '1px solid #000000';
           resultDiv.style.color = '#000000';
@@ -1063,8 +1076,8 @@
         resultDiv.style.background = '#f4f4f5';
         resultDiv.style.border = '1px solid #000000';
         resultDiv.style.color = '#000000';
-        resultDiv.innerHTML = `<strong>⚠️ Node Test Notice:</strong> ${err.message}<br>Endpoint: <code>${url}</code>`;
-        log(`Node connection test note for ${url}: ${err.message}`);
+        resultDiv.innerHTML = `<strong>⚠️ Node Test Notice:</strong> ${err.message}<br><span style="font-size:0.75rem; color:var(--text-muted);">Note: "Failed to fetch" usually indicates browser CORS policy restriction or that the node server is currently offline.</span><br>Endpoint: <code>${cleanUrl}</code>`;
+        log(`Node connection test note for ${cleanUrl}: ${err.message}`);
       }
     }
 
