@@ -756,7 +756,6 @@
       <button class="tab-btn" data-tab="tab-wallet">💳 WALLET</button>
       <button class="tab-btn" data-tab="tab-send">💸 SEND</button>
       <button class="tab-btn" data-tab="tab-receive">📥 RECEIVE</button>
-      <button class="tab-btn" data-tab="tab-history">📜 HISTORY</button>
       <button class="tab-btn" data-tab="tab-tools">🛠️ TOOLS</button>
       <button class="tab-btn" data-tab="tab-settings">⚙️ SETTINGS</button>
       <button class="tab-btn" data-tab="tab-logs">📋 LOGS</button>
@@ -767,8 +766,9 @@
   <main>
     <!-- TAB 1: HOME -->
     <div class="tab-content active" id="tab-home">
-      <div style="max-width: 800px; margin: 0 auto;">
-        <div class="card">
+      <div style="max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Account Balance Hero Card -->
+        <div class="card" style="margin-bottom: 0;">
           <div class="card-header">
             <div class="card-title">💰 Account Balance</div>
             <button class="btn-icon" id="btnRefreshBalance">🔄 Refresh</button>
@@ -789,6 +789,64 @@
           <div class="address-box">
             <span class="address-text" id="primaryAddress">Generating wallet...</span>
             <button class="btn-icon" id="btnCopyAddress">Copy</button>
+          </div>
+        </div>
+
+        <!-- Transaction History Card -->
+        <div class="card" style="margin-bottom: 0;">
+          <div class="card-header">
+            <div class="card-title">📜 Transaction History</div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn-icon" id="btnRefreshHistory">🔄 Refresh</button>
+              <button class="btn-icon" id="btnClearHistory">🗑️ Clear History</button>
+            </div>
+          </div>
+
+          <!-- Sub-Tabs Navigation for History -->
+          <div class="sub-tabs-wrapper">
+            <div class="sub-tabs-nav">
+              <button class="sub-tab-btn sub-tab-tx active" data-txfilter="all">
+                📑 All <span class="tab-badge" id="badgeTxAllCount">0</span>
+              </button>
+              <button class="sub-tab-btn sub-tab-tx" data-txfilter="sent">
+                ↗ Sent <span class="tab-badge" id="badgeTxSentCount">0</span>
+              </button>
+              <button class="sub-tab-btn sub-tab-tx" data-txfilter="received">
+                ↙ Received <span class="tab-badge" id="badgeTxReceivedCount">0</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- History Table -->
+          <div class="address-table-wrapper">
+            <table class="address-table">
+              <thead>
+                <tr>
+                  <th style="width: 80px;">Type</th>
+                  <th style="width: 140px;">TxID</th>
+                  <th>Address</th>
+                  <th style="width: 130px;">Amount</th>
+                  <th style="width: 150px;">Time</th>
+                  <th style="width: 90px;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                    No transaction history recorded yet.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- History Pagination -->
+          <div class="pagination-bar">
+            <div id="historyPageInfo">Showing 0-0 of 0 transactions</div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button class="btn-icon" id="btnHistoryPrev">◄ Prev</button>
+              <button class="btn-icon" id="btnHistoryNext">Next ►</button>
+            </div>
           </div>
         </div>
       </div>
@@ -985,67 +1043,7 @@
       </div>
     </div>
 
-    <!-- TAB 4: HISTORY -->
-    <div class="tab-content" id="tab-history">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">📜 Transaction History</div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn-icon" id="btnRefreshHistory">🔄 Refresh</button>
-            <button class="btn-icon" id="btnClearHistory">🗑️ Clear History</button>
-          </div>
-        </div>
-
-        <!-- Sub-Tabs Navigation for History -->
-        <div class="sub-tabs-wrapper">
-          <div class="sub-tabs-nav">
-            <button class="sub-tab-btn sub-tab-tx active" data-txfilter="all">
-              📑 All <span class="tab-badge" id="badgeTxAllCount">0</span>
-            </button>
-            <button class="sub-tab-btn sub-tab-tx" data-txfilter="sent">
-              ↗ Sent <span class="tab-badge" id="badgeTxSentCount">0</span>
-            </button>
-            <button class="sub-tab-btn sub-tab-tx" data-txfilter="received">
-              ↙ Received <span class="tab-badge" id="badgeTxReceivedCount">0</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- History Table -->
-        <div class="address-table-wrapper">
-          <table class="address-table">
-            <thead>
-              <tr>
-                <th style="width: 80px;">Type</th>
-                <th style="width: 140px;">TxID</th>
-                <th>Address</th>
-                <th style="width: 130px;">Amount</th>
-                <th style="width: 150px;">Time</th>
-                <th style="width: 90px;">Status</th>
-              </tr>
-            </thead>
-            <tbody id="historyTableBody">
-              <tr>
-                <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
-                  No transaction history recorded yet.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- History Pagination -->
-        <div class="pagination-bar">
-          <div id="historyPageInfo">Showing 0-0 of 0 transactions</div>
-          <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <button class="btn-icon" id="btnHistoryPrev">◄ Prev</button>
-            <button class="btn-icon" id="btnHistoryNext">Next ►</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 5: TOOLS -->
+    <!-- TAB 4: TOOLS -->
     <div class="tab-content" id="tab-tools">
       <div class="grid-two-col">
         <!-- Left: Unit Converter -->
