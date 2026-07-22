@@ -799,6 +799,7 @@
           <div class="card">
             <div class="card-header">
               <div class="card-title">🔑 Seed Phrase & Keys</div>
+              <button class="btn-icon" id="btnLockWallet" title="Clear session cache and lock wallet">🔒 Lock Session</button>
             </div>
             
             <div class="button-group">
@@ -1652,11 +1653,20 @@
         testNodeConnection(val || currentNodeURL);
       });
 
+      // Lock Session Listener
+      document.getElementById('btnLockWallet')?.addEventListener('click', async () => {
+        sessionStorage.removeItem('sikka_active_mnemonic');
+        log("Wallet session locked. sessionStorage cache cleared.");
+        alert("Session cache cleared! Generating a fresh wallet...");
+        await loadWallet();
+      });
+
       // Bind Event Listeners immediately before any async initialization
       const btnNewWallet = document.getElementById('btnNewWallet');
       if (btnNewWallet) {
         btnNewWallet.addEventListener('click', async () => {
           log("Generating fresh 24-word seed phrase...");
+          sessionStorage.removeItem('sikka_active_mnemonic');
           btnNewWallet.disabled = true;
           btnNewWallet.textContent = "⏳ Generating...";
           await loadWallet();
@@ -1689,6 +1699,7 @@
           return;
         }
         log("Restoring wallet from provided seed phrase...");
+        sessionStorage.removeItem('sikka_active_mnemonic');
         await loadWallet(text);
         window.switchTab('tab-wallet');
       });
@@ -1851,12 +1862,26 @@
 
     async function loadWallet(mnemonicStr) {
       try {
+        let seedToUse = mnemonicStr;
+        if (!seedToUse) {
+          const cachedMnemonic = sessionStorage.getItem('sikka_active_mnemonic');
+          if (cachedMnemonic && SDK && SDK.isValidMnemonic && SDK.isValidMnemonic(cachedMnemonic)) {
+            seedToUse = cachedMnemonic;
+            log("Restored wallet session from sessionStorage cache.");
+          }
+        }
+
         const gapLimit = parseInt(document.getElementById('gapLimitInput')?.value || "10", 10);
         activeHDWallet = await SDK.createHDWallet({
-          mnemonic: mnemonicStr,
+          mnemonic: seedToUse,
           nodeURL: currentNodeURL,
           gapLimit: gapLimit
         });
+
+        if (activeHDWallet && activeHDWallet.mnemonic) {
+          sessionStorage.setItem('sikka_active_mnemonic', activeHDWallet.mnemonic);
+        }
+
         const primaryAddr = await activeHDWallet.getReceiveAddress(0);
 
         document.getElementById('primaryAddress').textContent = primaryAddr;
