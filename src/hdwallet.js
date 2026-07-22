@@ -456,6 +456,7 @@ export class SikkaHDWallet {
       .join('');
 
     const txID = await this.api.submitTransaction(transaction);
+    this.invalidateScanCache();
     return {
       txID,
       sentAmount: amount,
@@ -463,19 +464,38 @@ export class SikkaHDWallet {
     };
   }
 
+  invalidateScanCache() {
+    this._scanCache = null;
+    this._scanCacheTime = 0;
+  }
+
+  async getSpendableUtxos() {
+    const scan = await this.scanAddresses();
+    return (scan.utxos || []).filter(u => !u.isImmature);
+  }
+
+  async getPendingUtxos() {
+    const scan = await this.scanAddresses();
+    return (scan.utxos || []).filter(u => u.isImmature);
+  }
+
   async addressSpace() {
     const scan = await this.scanAddresses();
     const receiveAddresses = scan.usedAddresses.filter(u => u.branch === 0).map(u => u.address);
     const changeAddresses = scan.usedAddresses.filter(u => u.branch === 1).map(u => u.address);
     const allAddresses = scan.usedAddresses.map(u => u.address);
-    const details = scan.usedAddresses;
 
-    if (allAddresses.length === 0) {
-      const primaryWallet = await this.getWalletForPath(0, 0, 0);
-      allAddresses.push(primaryWallet.address);
-      receiveAddresses.push(primaryWallet.address);
-      details.push({
-        address: primaryWallet.address,
+    const details = {
+      receive: scan.usedAddresses.filter(u => u.branch === 0),
+      change: scan.usedAddresses.filter(u => u.branch === 1)
+    };
+
+    if (receiveAddresses.length === 0) {
+      const primary = await this.getReceiveAddress(0);
+      receiveAddresses.push(primary);
+      allAddresses.push(primary);
+      details.receive.push({
+        address: primary,
         branch: 0,
         index: 0,
         balance: 0,
