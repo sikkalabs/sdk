@@ -1514,21 +1514,64 @@
 
     async function populateAddressExplorer() {
       if (!activeHDWallet) return;
-      derivedAddressList = [];
-      changeDerivedAddressList = [];
 
-      const scan = typeof activeHDWallet.scanAddresses === 'function' 
-        ? await activeHDWallet.scanAddresses() 
-        : { usedAddresses: [], nextReceiveIndex: 0, nextChangeIndex: 0 };
+      if (derivedAddressList.length === 0) {
+        for (let i = 0; i < 10; i++) {
+          const addr = await activeHDWallet.getReceiveAddress(i);
+          derivedAddressList.push({
+            index: i,
+            path: `m/44'/9999'/0'/0/${i}`,
+            address: addr,
+            used: false
+          });
+        }
+      }
 
-      const initialReceiveCount = Math.max(20, (scan.nextReceiveIndex || 0) + 10);
-      const initialChangeCount = Math.max(20, (scan.nextChangeIndex || 0) + 10);
-
-      await ensureDerivedReceiveAddresses(initialReceiveCount);
-      await ensureDerivedChangeAddresses(initialChangeCount);
+      if (changeDerivedAddressList.length === 0) {
+        for (let i = 0; i < 10; i++) {
+          const addr = await activeHDWallet.getChangeAddress(i);
+          changeDerivedAddressList.push({
+            index: i,
+            path: `m/44'/9999'/0'/1/${i}`,
+            address: addr,
+            used: false
+          });
+        }
+      }
 
       renderAddressTable();
       renderChangeAddressTable();
+
+      (async () => {
+        try {
+          const scan = typeof activeHDWallet.scanAddresses === 'function' 
+            ? await activeHDWallet.scanAddresses() 
+            : { usedAddresses: [], nextReceiveIndex: 0, nextChangeIndex: 0 };
+
+          const usedAddrsSet = new Set((scan.usedAddresses || []).map(u => u.address));
+          const nextReceiveCleanIndex = scan.nextReceiveIndex || 0;
+          const nextChangeCleanIndex = scan.nextChangeIndex || 0;
+
+          const initialReceiveCount = Math.max(20, nextReceiveCleanIndex + 10);
+          const initialChangeCount = Math.max(20, nextChangeCleanIndex + 10);
+
+          await ensureDerivedReceiveAddresses(initialReceiveCount);
+          await ensureDerivedChangeAddresses(initialChangeCount);
+
+          derivedAddressList.forEach(item => {
+            item.used = usedAddrsSet.has(item.address) || item.index < nextReceiveCleanIndex;
+          });
+
+          changeDerivedAddressList.forEach(item => {
+            item.used = usedAddrsSet.has(item.address) || item.index < nextChangeCleanIndex;
+          });
+
+          renderAddressTable();
+          renderChangeAddressTable();
+        } catch (err) {
+          console.warn("Background address scan notice:", err);
+        }
+      })();
     }
 
     function renderAddressTable() {

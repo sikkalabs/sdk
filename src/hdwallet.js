@@ -158,6 +158,10 @@ export class SikkaHDWallet {
   }
 
   async scanAddresses() {
+    if (this._scanCache && (Date.now() - (this._scanCacheTime || 0) < 5000)) {
+      return this._scanCache;
+    }
+
     const allUtxos = [];
     const usedAddresses = [];
     let nextReceiveIndex = 0;
@@ -287,12 +291,17 @@ export class SikkaHDWallet {
     this.nextReceiveIndex = nextReceiveIndex;
     this.nextChangeIndex = nextChangeIndex;
 
-    return {
+    const result = {
       utxos: allUtxos,
       usedAddresses,
       nextReceiveIndex,
       nextChangeIndex
     };
+
+    this._scanCache = result;
+    this._scanCacheTime = Date.now();
+
+    return result;
   }
 
   async getNewUnusedAddress() {
