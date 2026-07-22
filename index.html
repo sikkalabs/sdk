@@ -1478,6 +1478,20 @@
         <div class="log-box" id="logBox">Initializing Sikka Post-Quantum SDK...</div>
       </div>
     </div>
+
+    <!-- Single-Line Live Wallet Activity Status Ticker -->
+    <div class="wallet-status-bar" id="walletStatusBar" style="margin-top: 1.25rem; padding: 0.75rem 1.25rem; background: var(--bg-subtle); border: 1px solid var(--border-main); border-radius: var(--radius-md); font-family: var(--font-mono); font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 75%;">
+        <span class="status-pulse-dot" id="walletStatusDot" style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block; flex-shrink: 0;"></span>
+        <span style="font-weight: 700; color: var(--text-main); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; flex-shrink: 0;">STATUS:</span>
+        <span id="walletStatusText" style="color: var(--text-secondary); text-overflow: ellipsis; overflow: hidden;">Initializing Sikka Post-Quantum SDK...</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.72rem; color: var(--text-muted); flex-shrink: 0;">
+        <span id="walletLastSyncTime">Synced 0s ago</span>
+        <span style="opacity: 0.4;">|</span>
+        <span id="walletNodeHost">1.sikkalabs.com</span>
+      </div>
+    </div>
   </main>
 
   <!-- Footer -->
@@ -1533,13 +1547,53 @@
     let utxoCurrentPage = 1;
     const UTXO_PAGE_SIZE = 10;
 
+    let lastSyncTimestamp = Date.now();
+
+    function updateWalletStatus(msg, isError = false) {
+      const elText = document.getElementById('walletStatusText');
+      const elDot = document.getElementById('walletStatusDot');
+      const elHost = document.getElementById('walletNodeHost');
+
+      if (elText && msg) {
+        elText.textContent = msg;
+      }
+
+      if (elDot) {
+        if (isError || (msg && msg.toUpperCase().includes("ERROR"))) {
+          elDot.style.background = '#ef4444';
+        } else if (msg && (msg.includes("Scanning") || msg.includes("Mining") || msg.includes("Deriving") || msg.includes("⏳"))) {
+          elDot.style.background = '#f59e0b';
+        } else {
+          elDot.style.background = '#10b981';
+          lastSyncTimestamp = Date.now();
+        }
+      }
+
+      if (elHost && typeof currentNodeURL !== 'undefined') {
+        try {
+          elHost.textContent = new URL(currentNodeURL).host;
+        } catch {
+          elHost.textContent = currentNodeURL;
+        }
+      }
+    }
+
     function log(msg) {
       const logBox = document.getElementById('logBox');
       if (logBox) {
         const time = new Date().toLocaleTimeString();
         logBox.textContent = `[${time}] ${msg}\n` + logBox.textContent;
       }
+      updateWalletStatus(msg);
     }
+
+    setInterval(() => {
+      const elSync = document.getElementById('walletLastSyncTime');
+      if (elSync) {
+        const elapsedSecs = Math.floor((Date.now() - lastSyncTimestamp) / 1000);
+        elSync.textContent = `Synced ${elapsedSecs}s ago`;
+      }
+    }, 1000);
 
     function getSavedTxHistory() {
       try {
