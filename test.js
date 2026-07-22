@@ -1,11 +1,24 @@
-import { 
+const isRemote = process.argv.includes('--github') || 
+                 process.argv.includes('--remote') || 
+                 process.argv.includes('--npm') || 
+                 process.argv.includes('--package');
+
+const targetArg = process.argv.find(arg => arg.startsWith('--import=') || arg.startsWith('--target='));
+const importTarget = targetArg 
+  ? targetArg.split('=')[1] 
+  : (isRemote ? '@sikkalabs/sdk' : './src/index.js');
+
+console.log(`Loading SDK module from: ${importTarget}`);
+const sdk = await import(importTarget);
+
+const { 
   generateMnemonic, 
   validateMnemonic, 
   createWalletFromMnemonic, 
   createWalletFromPath, 
   seedFromMnemonic,
   createHDWallet,
-  hdWallet as createHDWalletAlias,
+  hdWallet: createHDWalletAlias,
   newMnemonic,
   isValidMnemonic,
   fromMnemonic,
@@ -15,7 +28,7 @@ import {
   toSikka,
   toChillar,
   SikkaClient 
-} from './src/index.js';
+} = sdk;
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));

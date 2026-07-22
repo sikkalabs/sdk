@@ -5,7 +5,9 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "test": "node test.js"
+    "test": "node test.js",
+    "test:github": "node test.js --github",
+    "test:remote": "node test.js --remote"
   },
   "repository": {
     "type": "git",
