@@ -510,6 +510,11 @@ export class SikkaHDWallet {
     };
   }
 
+  async getAddressHistory(address, options = {}) {
+    const targetAddress = address || (await this.getReceiveAddress(0));
+    return await this.api.getAddressHistory(targetAddress, options);
+  }
+
   async history(limit = 100) {
     const space = await this.addressSpace();
     const addresses = space.addresses;

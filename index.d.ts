@@ -125,11 +125,49 @@ export class PoWTimeoutError extends SikkaError {
   constructor(bits: number, attempts: number);
 }
 
+export interface DagTipsResponse {
+  tips: string[];
+  tip_count: number;
+  max_dag_depth: number;
+  tips_fingerprint: string;
+}
+
+export interface PeerInfo {
+  address: string;
+  score: number;
+  latency_ms: number;
+  last_seen: string;
+  bootstrap: boolean;
+  banned: boolean;
+  banned_until?: string;
+  penalty_points?: number;
+}
+
+export interface PeersResponse {
+  peers: PeerInfo[];
+  total_known: number;
+  banned_count: number;
+}
+
+export interface AddressHistoryOptions {
+  limit?: number;
+  before?: string;
+}
+
+export interface AddressHistoryResponse {
+  address: string;
+  transactions: any[];
+  count: number;
+}
+
 export class APIClient {
   constructor(nodeURL: string);
   getAddressInfo(address: string): Promise<AddressInfo>;
   getNodeStatus(): Promise<any>;
+  getDagTips(): Promise<DagTipsResponse>;
   getLatestTransactionTips(): Promise<string[]>;
+  getPeers(): Promise<PeersResponse>;
+  getAddressHistory(address: string, options?: AddressHistoryOptions): Promise<AddressHistoryResponse>;
   getProofOfWorkQuote(transaction: Transaction): Promise<{ required_bits: number; parent_pow_hashes: string[] }>;
   submitTransaction(transaction: Transaction): Promise<string>;
   getTransaction(txid: string): Promise<any>;
@@ -165,6 +203,7 @@ export class SikkaHDWallet {
   getSpendableUtxos(): Promise<UTXO[]>;
   getPendingUtxos(): Promise<UTXO[]>;
   addressSpace(): Promise<any>;
+  getAddressHistory(address?: string, options?: AddressHistoryOptions): Promise<AddressHistoryResponse>;
   history(limit?: number): Promise<any>;
 }
 
@@ -178,6 +217,9 @@ export class SikkaClient {
   pow(transaction: Transaction, minimumBits: number, options?: PoWOptions): Promise<{ nonce: number; bits: number }>;
   getTransaction(txid: string): Promise<any>;
   getTransactionWeight(txid: string): Promise<any>;
+  getDagTips(): Promise<DagTipsResponse>;
+  getPeers(): Promise<PeersResponse>;
+  getAddressHistory(address?: string, options?: AddressHistoryOptions): Promise<AddressHistoryResponse>;
   addressSpace(gapLimit?: number): Promise<any>;
   history(address?: string, limit?: number, gapLimit?: number): Promise<any>;
   send(amount: bigint | number | string, recipientAddr: string, options?: SendOptions): Promise<SendResult>;

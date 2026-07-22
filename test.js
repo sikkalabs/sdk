@@ -232,9 +232,19 @@ async function runTests() {
   }
 
   // ----------------------------------------------------
-  // 9. Live Network Integration Test (Optional)
+  // 9. v0.3.2 API Methods Verification (DAG Tips, Peers, Address History)
   // ----------------------------------------------------
-  console.log("\n9. Initializing Network Integration Wallet...");
+  console.log("\n9. Testing v0.3.2 API Client Methods...");
+  const apiClient = new sdk.APIClient("https://1.sikkalabs.com");
+  if (typeof apiClient.getDagTips !== 'function') throw new Error("APIClient.getDagTips is missing");
+  if (typeof apiClient.getPeers !== 'function') throw new Error("APIClient.getPeers is missing");
+  if (typeof apiClient.getAddressHistory !== 'function') throw new Error("APIClient.getAddressHistory is missing");
+  console.log("   v0.3.2 API Client Methods: PASSED ✓");
+
+  // ----------------------------------------------------
+  // 10. Live Network Integration Test (Optional)
+  // ----------------------------------------------------
+  console.log("\n10. Initializing Network Integration Wallet...");
   const wallet = await fromMnemonic(generatedMnemonic);
   console.log("   Active Wallet Address:", wallet.address);
   console.log("   Active Public Key:    ", wallet.pubKeyHex);

@@ -91,12 +91,61 @@ export class APIClient {
     return status;
   }
 
+  async getDagTips() {
+    const url = `${this.nodeURL}/v1/dag/tips`;
+    const response = await fetchFromNode('GET', url);
+    if (response.status !== 200) {
+      const errorMessage = await response.text();
+      throw new Error(`Failed to get DAG tips (${response.status}): ${errorMessage}`);
+    }
+    return await response.json();
+  }
+
   async getLatestTransactionTips() {
+    try {
+      const tipsData = await this.getDagTips();
+      if (tipsData.tips && tipsData.tips.length > 0) {
+        if (tipsData.tips.length === 1) {
+          return [tipsData.tips[0], tipsData.tips[0]];
+        }
+        return tipsData.tips.slice(0, 2);
+      }
+    } catch (_) {
+      // Fall back to /v1/status if /v1/dag/tips endpoint is not available
+    }
+
     const status = await this.getNodeStatus();
+    if (!status.tips || status.tips.length < 1) {
+      throw new Error("Node status returned no tips (empty DAG)");
+    }
     if (status.tips.length === 1) {
       return [status.tips[0], status.tips[0]];
     }
     return status.tips.slice(0, 2);
+  }
+
+  async getPeers() {
+    const url = `${this.nodeURL}/v1/peers`;
+    const response = await fetchFromNode('GET', url);
+    if (response.status !== 200) {
+      const errorMessage = await response.text();
+      throw new Error(`Failed to get peers telemetry (${response.status}): ${errorMessage}`);
+    }
+    return await response.json();
+  }
+
+  async getAddressHistory(address, options = {}) {
+    const limit = options.limit || 50;
+    let url = `${this.nodeURL}/v1/address/${address}/history?limit=${limit}`;
+    if (options.before) {
+      url += `&before=${encodeURIComponent(options.before)}`;
+    }
+    const response = await fetchFromNode('GET', url);
+    if (response.status !== 200) {
+      const errorMessage = await response.text();
+      throw new Error(`Failed to get address history (${response.status}): ${errorMessage}`);
+    }
+    return await response.json();
   }
 
   async getProofOfWorkQuote(transaction) {

@@ -126,6 +126,22 @@ export class SikkaClient {
     return await this.api.getTransactionWeight(txid);
   }
 
+  async getDagTips() {
+    return await this.api.getDagTips();
+  }
+
+  async getPeers() {
+    return await this.api.getPeers();
+  }
+
+  async getAddressHistory(address, options = {}) {
+    const targetAddress = address || (this.wallet && this.wallet.address);
+    if (!targetAddress) {
+      throw new Error("Address is required to get address history");
+    }
+    return await this.api.getAddressHistory(targetAddress, options);
+  }
+
   async addressSpace(gapLimit = 20) {
     if (this.hdWallet && typeof this.hdWallet.addressSpace === 'function') {
       return await this.hdWallet.addressSpace(gapLimit);

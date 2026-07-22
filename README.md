@@ -314,6 +314,9 @@ npm run serve
 | `sikkaToChillar(sikka)` | `toChillar(sikka)` / `fromSikka(sikka)` | `bigint` | Converts Sikka amount to chillar (`1 Sikka = 10,000,000,000 chillar`). |
 | `chillarToSikka(chillar)` | `toSikka(chillar)` / `fromChillar(chillar)` | `string \| number` | Converts chillar amount to Sikka formatted string or float. |
 | `validateAddress(address)` | `isValidAddress(address)` | `string` | Validates a `sikka1...` Bech32m address string. |
+| `apiClient.getDagTips()` | - | `Promise<DagTipsResponse>` | Fetches current unconfirmed DAG tips, depth, and tips fingerprint. |
+| `apiClient.getPeers()` | - | `Promise<PeersResponse>` | Fetches peer health telemetry, RTT latency EMA (ms), and ban status. |
+| `apiClient.getAddressHistory(addr, options)` | - | `Promise<AddressHistoryResponse>` | Fetches full historical transaction ledger for a given address. |
 
 ### Error Classes
 
