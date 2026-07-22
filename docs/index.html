@@ -1,0 +1,2110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ Sikka Post-Quantum Web Wallet</title>
+  <!-- Import Map for Browser Resolution of Dependencies -->
+  <script type="importmap">
+  {
+    "imports": {
+      "@noble/hashes/sha2.js": "https://esm.sh/@noble/hashes@2.2.0/sha2",
+      "@noble/hashes/sha3.js": "https://esm.sh/@noble/hashes@2.2.0/sha3",
+      "@noble/hashes/hkdf.js": "https://esm.sh/@noble/hashes@2.2.0/hkdf",
+      "@noble/hashes/pbkdf2.js": "https://esm.sh/@noble/hashes@2.2.0/pbkdf2",
+      "@noble/hashes/": "https://esm.sh/@noble/hashes@2.2.0/",
+      "mldsa-wasm": "https://cdn.jsdelivr.net/npm/mldsa-wasm@0.0.4/dist/mldsa.js"
+    }
+  }
+  </script>
+
+  <!-- Monochrome White Theme Styling -->
+  <style>
+    :root {
+      --bg-body: #ffffff;
+      --bg-subtle: #f8f9fa;
+      --bg-card: #ffffff;
+      --bg-card-alt: #f1f3f5;
+      --bg-input: #ffffff;
+      --bg-hover: #e9ecef;
+      --bg-black: #000000;
+      
+      --border-light: #e9ecef;
+      --border-main: #dee2e6;
+      --border-dark: #212529;
+      --border-black: #000000;
+      
+      --text-main: #000000;
+      --text-secondary: #343a40;
+      --text-muted: #6c757d;
+      --text-inverse: #ffffff;
+
+      --font-heading: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+      
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* Subtle top border bar */
+    .top-indicator-bar {
+      height: 4px;
+      background: var(--bg-black);
+      width: 100%;
+    }
+
+    /* Header */
+    header {
+      position: relative;
+      z-index: 10;
+      border-bottom: 1px solid var(--border-main);
+      background: var(--bg-body);
+      padding: 1.25rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--bg-black);
+      color: var(--text-inverse);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      font-weight: bold;
+    }
+
+    .brand-title {
+      font-family: var(--font-heading);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+    }
+
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .header-badges {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: 1px solid var(--border-dark);
+      background: var(--bg-subtle);
+      color: var(--text-main);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-node {
+      background: #ffffff;
+      border-color: var(--border-main);
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--bg-black);
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
+      animation: pulse-mono 2s infinite;
+    }
+
+    @keyframes pulse-mono {
+      0% { transform: scale(0.95); opacity: 0.7; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.7; }
+    }
+
+    /* Tabs Bar */
+    .tabs-wrapper {
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border-main);
+      padding: 0.75rem 2rem 0 2rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .tabs-nav {
+      display: flex;
+      gap: 0.5rem;
+      max-width: 1200px;
+      width: 100%;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .tabs-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom: none;
+      border-top-left-radius: var(--radius-md);
+      border-top-right-radius: var(--radius-md);
+      padding: 0.75rem 1.5rem;
+      font-family: var(--font-heading);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: var(--bg-hover);
+    }
+
+    .tab-btn.active {
+      background: var(--bg-black);
+      color: var(--text-inverse);
+      border-color: var(--bg-black);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Container & Grid */
+    main {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .tab-content {
+      display: none;
+      animation: tabFadeIn 0.2s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .grid-two-col {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 900px) {
+      .grid-two-col {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1.5rem;
+    }
+
+    .card:hover {
+      border-color: var(--border-dark);
+      box-shadow: var(--shadow-md);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-main);
+    }
+
+    /* Hero Balance Card */
+    .hero-balance {
+      background: var(--bg-black);
+      color: var(--text-inverse);
+      border-radius: var(--radius-md);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .balance-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #a1a1aa;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+
+    .balance-amount {
+      font-family: var(--font-heading);
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .balance-sub {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: #d4d4d8;
+      margin-top: 0.4rem;
+    }
+
+    /* Address Pill & Copy */
+    .address-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .address-text {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--text-main);
+      word-break: break-all;
+      font-weight: 500;
+    }
+
+    /* Buttons */
+    .btn-icon {
+      background: var(--bg-body);
+      border: 1px solid var(--border-dark);
+      color: var(--text-main);
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .btn-icon:hover {
+      background: var(--bg-black);
+      color: var(--text-inverse);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 0.85rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid var(--border-dark);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .btn-primary {
+      background: var(--bg-black);
+      color: var(--text-inverse);
+      border-color: var(--bg-black);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary:hover {
+      background: #27272a;
+      border-color: #27272a;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-secondary {
+      background: var(--bg-body);
+      border: 1px solid var(--border-main);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-dark);
+    }
+
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .preset-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .btn-preset {
+      flex: 1;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-main);
+      color: var(--text-main);
+      padding: 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-preset:hover {
+      background: var(--bg-black);
+      color: var(--text-inverse);
+      border-color: var(--bg-black);
+    }
+
+    /* Forms & Inputs */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--text-secondary);
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
+      padding: 0.8rem 1rem;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      border-color: var(--border-black);
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Mnemonic Word Grid */
+    .mnemonic-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      max-height: 240px;
+      overflow-y: auto;
+      margin-bottom: 1rem;
+    }
+
+    @media (min-width: 600px) {
+      .mnemonic-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .word-badge {
+      background: var(--bg-body);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.6rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .word-num {
+      color: var(--text-muted);
+      font-size: 0.65rem;
+      user-select: none;
+      font-weight: bold;
+    }
+
+    .word-val {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    /* Mining PoW Progress Box */
+    .pow-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-dark);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-top: 1.25rem;
+      display: none;
+    }
+
+    .pow-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.6rem;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: var(--border-main);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--bg-black);
+      transition: width 0.3s ease;
+    }
+
+    /* QR Code Display */
+    .qr-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
+      margin-bottom: 1.25rem;
+    }
+
+    .qr-frame {
+      background: #ffffff;
+      padding: 12px;
+      border: 2px solid var(--border-black);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .qr-frame img {
+      display: block;
+      width: 180px;
+      height: 180px;
+    }
+
+    /* Logs & Terminal */
+    .log-box {
+      background: var(--bg-black);
+      border: 1px solid var(--border-black);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #f4f4f5;
+      min-height: 280px;
+      max-height: 480px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    /* Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-top: 1rem;
+    }
+
+    .data-table th, .data-table td {
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--border-main);
+      text-align: left;
+    }
+
+    .data-table th {
+      background: var(--bg-subtle);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-main);
+      padding: 1.5rem 2rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: var(--bg-body);
+      margin-top: auto;
+    }
+
+    footer a {
+      color: var(--text-main);
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+    /* Sub-tabs for Address Explorer */
+    .sub-tabs-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-main);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .sub-tabs-nav {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .sub-tab-btn {
+      background: var(--bg-body);
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.85rem;
+      font-family: var(--font-heading);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .sub-tab-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-main);
+      border-color: var(--border-dark);
+    }
+
+    .sub-tab-btn.active {
+      background: var(--bg-black);
+      color: var(--text-inverse);
+      border-color: var(--bg-black);
+    }
+
+    .tab-badge {
+      font-size: 0.68rem;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.1rem 0.45rem;
+      border-radius: 10px;
+      font-weight: bold;
+    }
+
+    .sub-tab-btn:not(.active) .tab-badge {
+      background: var(--bg-hover);
+      color: var(--text-main);
+    }
+
+    /* Address Explorer Table */
+    .address-table-wrapper {
+      overflow-x: auto;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border-main);
+      border-radius: var(--radius-md);
+    }
+
+    .address-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .address-table th, .address-table td {
+      padding: 0.75rem 0.85rem;
+      border-bottom: 1px solid var(--border-light);
+      text-align: left;
+    }
+
+    .address-table th {
+      background: var(--bg-subtle);
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-main);
+    }
+
+    .address-table tr:hover td {
+      background: var(--bg-subtle);
+    }
+
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-indicator-bar"></div>
+
+  <!-- Navigation Tabs Bar -->
+  <div class="tabs-wrapper">
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="tab-home">🏠 HOME</button>
+      <button class="tab-btn" data-tab="tab-wallet">💳 WALLET</button>
+      <button class="tab-btn" data-tab="tab-send">💸 SEND</button>
+      <button class="tab-btn" data-tab="tab-receive">📥 RECEIVE</button>
+      <button class="tab-btn" data-tab="tab-tools">🛠️ TOOLS</button>
+      <button class="tab-btn" data-tab="tab-settings">⚙️ SETTINGS</button>
+      <button class="tab-btn" data-tab="tab-logs">📋 LOGS</button>
+    </nav>
+  </div>
+
+  <!-- Main Content Areas -->
+  <main>
+    <!-- TAB 1: HOME -->
+    <div class="tab-content active" id="tab-home">
+      <div style="max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Account Balance Hero Card -->
+        <div class="card" style="margin-bottom: 0;">
+          <div class="card-header">
+            <div class="card-title">💰 Account Balance</div>
+            <button class="btn-icon" id="btnRefreshBalance">🔄 Refresh</button>
+          </div>
+
+          <div class="hero-balance">
+            <div class="balance-label">Total Spendable Balance</div>
+            <div class="balance-amount" id="balanceSikka">0.00 <span style="font-size: 1.2rem; font-weight: 600;">SIKKA</span></div>
+            <div class="balance-sub" id="balanceChillar">0 chillar</div>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-primary" onclick="switchTab('tab-send')">💸 Send Sikka</button>
+            <button class="btn btn-secondary" onclick="switchTab('tab-receive')">📥 Receive</button>
+          </div>
+
+          <div class="form-label">Primary Receive Address (Bech32m)</div>
+          <div class="address-box">
+            <span class="address-text" id="primaryAddress">Generating wallet...</span>
+            <button class="btn-icon" id="btnCopyAddress">Copy</button>
+          </div>
+        </div>
+
+        <!-- Transaction History Card -->
+        <div class="card" style="margin-bottom: 0;">
+          <div class="card-header">
+            <div class="card-title">📜 Transaction History</div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn-icon" id="btnRefreshHistory">🔄 Refresh</button>
+              <button class="btn-icon" id="btnClearHistory">🗑️ Clear History</button>
+            </div>
+          </div>
+
+          <!-- Sub-Tabs Navigation for History -->
+          <div class="sub-tabs-wrapper">
+            <div class="sub-tabs-nav">
+              <button class="sub-tab-btn sub-tab-tx active" data-txfilter="all">
+                📑 All <span class="tab-badge" id="badgeTxAllCount">0</span>
+              </button>
+              <button class="sub-tab-btn sub-tab-tx" data-txfilter="sent">
+                ↗ Sent <span class="tab-badge" id="badgeTxSentCount">0</span>
+              </button>
+              <button class="sub-tab-btn sub-tab-tx" data-txfilter="received">
+                ↙ Received <span class="tab-badge" id="badgeTxReceivedCount">0</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- History Table -->
+          <div class="address-table-wrapper">
+            <table class="address-table">
+              <thead>
+                <tr>
+                  <th style="width: 80px;">Type</th>
+                  <th style="width: 140px;">TxID</th>
+                  <th>Address</th>
+                  <th style="width: 130px;">Amount</th>
+                  <th style="width: 150px;">Time</th>
+                  <th style="width: 90px;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                    No transaction history recorded yet.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- History Pagination -->
+          <div class="pagination-bar">
+            <div id="historyPageInfo">Showing 0-0 of 0 transactions</div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button class="btn-icon" id="btnHistoryPrev">◄ Prev</button>
+              <button class="btn-icon" id="btnHistoryNext">Next ►</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: WALLET -->
+    <div class="tab-content" id="tab-wallet">
+      <div class="grid-two-col">
+        <!-- Left: Seed Phrase & Keys -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔑 Seed Phrase & Keys</div>
+            <button class="btn-icon" id="btnLockWallet" title="Clear session cache and lock wallet">🔒 Lock Session</button>
+          </div>
+          
+          <div class="button-group">
+            <button class="btn btn-secondary" id="btnNewWallet">✨ New 24-Word Seed</button>
+            <button class="btn btn-secondary" id="btnToggleSeed">👁️ Show / Hide Seed</button>
+          </div>
+
+          <!-- Seed Container -->
+          <div id="seedContainer" style="display: none;">
+            <div class="form-label">24-Word BIP-39 Seed Mnemonic</div>
+            <div class="mnemonic-grid" id="mnemonicGrid"></div>
+          </div>
+
+          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 1rem; padding: 0.75rem; background: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-main);">
+            <strong>ℹ️ Security Notice:</strong> Keep your 24-word seed phrase safe. Anyone with access to this phrase can control your funds.
+          </div>
+        </div>
+
+        <!-- Right: Import Existing Wallet -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📥 Import Existing Wallet</div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">BIP-39 Mnemonic Phrase (12-24 Words)</label>
+            <textarea class="form-textarea" id="importMnemonicInput" rows="3" placeholder="enter 24 word seed phrase..."></textarea>
+          </div>
+
+          <button class="btn btn-secondary" id="btnImportMnemonic">📥 Restore Wallet</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: SEND -->
+    <div class="tab-content" id="tab-send">
+      <div class="grid-two-col">
+        <!-- Left: Send Form -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">💸 Send Sikka</div>
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">ML-DSA-87 Signed</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Recipient Address</label>
+            <input type="text" class="form-input" id="sendRecipient" placeholder="sikka1..." />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Amount (in Sikka)</label>
+            <div class="preset-group">
+              <button class="btn-preset" data-amount="0.1">0.1 SIKKA</button>
+              <button class="btn-preset" data-amount="1">1 SIKKA</button>
+              <button class="btn-preset" data-amount="5">5 SIKKA</button>
+              <button class="btn-preset" data-amount="10">10 SIKKA</button>
+            </div>
+            <input type="text" class="form-input" id="sendAmount" placeholder="e.g. 1.5" />
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.4rem; font-weight: 600;" id="sendAmountChillar">
+              = 0 chillar
+            </div>
+          </div>
+
+          <button class="btn btn-primary" id="btnSend" style="padding: 1rem;">🚀 Mine PoW & Broadcast Transaction</button>
+
+          <!-- Mining Progress Indicator -->
+          <div class="pow-box" id="powBox">
+            <div class="pow-header">
+              <span id="powStatusText">⛏️ Mining Proof-of-Work Nonce...</span>
+              <span id="powBitsText">0 bits</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="powProgressBar"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Network PoW Requirements Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⛏️ Network PoW Requirements</div>
+            <button class="btn-icon" id="btnRefreshPowQuote">🔄 Refresh Quote</button>
+          </div>
+
+          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.4;">
+            Before broadcasting, Sikka SDK requests a Proof-of-Work quote from the node endpoint (<code style="font-family: var(--font-mono);">/v1/tx/pow-quote</code>).
+          </div>
+
+          <div class="grid-two-col" style="gap: 0.75rem; margin-bottom: 1.25rem;">
+            <div style="padding: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-main); border-radius: var(--radius-sm);">
+              <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary);">Required Bits</div>
+              <div style="font-size: 1.3rem; font-weight: 800; margin-top: 0.2rem; font-family: var(--font-mono);" id="powRequiredBitsVal">5 Bits</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Leading zero bits</div>
+            </div>
+
+            <div style="padding: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-main); border-radius: var(--radius-sm);">
+              <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary);">Avg Hash Attempts</div>
+              <div style="font-size: 1.3rem; font-weight: 800; margin-top: 0.2rem; font-family: var(--font-mono);" id="powDifficultyVal">32x Hashes</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">SHA3-256 iterations</div>
+            </div>
+
+            <div style="padding: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-main); border-radius: var(--radius-sm);">
+              <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary);">Estimated Mining</div>
+              <div style="font-size: 1.3rem; font-weight: 800; margin-top: 0.2rem; font-family: var(--font-mono);" id="powEstTimeVal">&lt; 1 sec</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">In-browser miner</div>
+            </div>
+
+            <div style="padding: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-main); border-radius: var(--radius-sm);">
+              <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary);">DAG Depth</div>
+              <div style="font-size: 1.3rem; font-weight: 800; margin-top: 0.2rem; font-family: var(--font-mono);" id="powDagDepthVal">2,212</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Chain consensus height</div>
+            </div>
+          </div>
+
+          <div style="padding: 0.65rem 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-main); border-radius: var(--radius-sm); font-size: 0.78rem; text-align: center; font-weight: 700;" id="powQuoteStatusPill">
+            🟢 Live Node PoW Quote Ready
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: RECEIVE -->
+    <div class="tab-content" id="tab-receive">
+      <div class="grid-two-col" style="margin-bottom: 1.5rem;">
+        <!-- Left: Primary Address & QR -->
+        <div class="card" style="margin-bottom: 0;">
+          <div class="card-header">
+            <div class="card-title">📥 Primary Receive Address</div>
+          </div>
+
+          <div class="qr-container">
+            <div class="qr-frame">
+              <img id="qrCodeImg" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><rect width='180' height='180' fill='%23ffffff'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%23000000'>QR Code</text></svg>" alt="Receive Address QR Code" />
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.75rem; font-weight: 600;">Scan to receive Sikka</div>
+          </div>
+
+          <div class="form-label">Sikka Address (Bech32m)</div>
+          <div class="address-box">
+            <span class="address-text" id="receiveTabAddress">Generating wallet...</span>
+            <button class="btn-icon" id="btnCopyReceiveTabAddress">Copy</button>
+          </div>
+        </div>
+
+        <!-- Right: HD Address Quick Generator -->
+        <div class="card" style="margin-bottom: 0;">
+          <div class="card-header">
+            <div class="card-title">🌿 Quick HD Derivation</div>
+            <span class="badge">Gap Limit: 10</span>
+          </div>
+          
+          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+            Derive deterministic child addresses (<code style="font-family: var(--font-mono);">m/44'/9999'/0'/0/i</code>) from your master seed.
+          </div>
+
+          <button class="btn btn-secondary" id="btnGetNewAddress" style="margin-bottom: 1.25rem;">
+            ➕ Generate Next Clean Receive Address
+          </button>
+
+          <div class="form-label">Latest Derived Address</div>
+          <div class="address-box">
+            <span class="address-text" id="hdNextAddress">Click button above to derive</span>
+            <button class="btn-icon" id="btnCopyHDAddress">Copy</button>
+          </div>
+
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 1rem; line-height: 1.4;">
+            Post-quantum ML-DSA-87 signatures ensure state-of-the-art cryptographic security for every derived address.
+          </div>
+        </div>
+      </div>
+
+      <!-- HD Address Explorer: Sub-Tabbed & Paginated Table -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📑 Derived Address Explorer</div>
+          <span class="badge" style="background: var(--bg-black); color: #fff;">10 Items / Page</span>
+        </div>
+
+        <!-- Sub-Tabs Navigation -->
+        <div class="sub-tabs-wrapper">
+          <div class="sub-tabs-nav">
+            <button class="sub-tab-btn active" data-filter="unused">
+              🟢 Unused Addresses <span class="tab-badge" id="badgeUnusedCount">0</span>
+            </button>
+            <button class="sub-tab-btn" data-filter="used">
+              🔴 Used Addresses <span class="tab-badge" id="badgeUsedCount">0</span>
+            </button>
+            <button class="sub-tab-btn" data-filter="all">
+              📑 All Addresses <span class="tab-badge" id="badgeAllCount">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Address Table -->
+        <div class="address-table-wrapper">
+          <table class="address-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th style="width: 170px;">Derivation Path</th>
+                <th>Bech32m Address</th>
+                <th style="width: 90px;">Status</th>
+                <th style="width: 80px;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="addressTableBody">
+              <tr>
+                <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                  Generating address table...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-bar">
+          <div id="addressPageInfo">Showing 0-0 of 0 addresses</div>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="btn-icon" id="btnAddressPrev">◄ Prev</button>
+            <button class="btn-icon" id="btnAddressNext">Next ►</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: TOOLS -->
+    <div class="tab-content" id="tab-tools">
+      <div class="grid-two-col">
+        <!-- Left: Unit Converter -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🧮 Sikka <-> Chillar Converter</div>
+          </div>
+          
+          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            1 Sikka = 10,000,000,000 chillar (10 decimal places)
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Sikka Amount</label>
+            <input type="text" class="form-input" id="calcSikka" value="1" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Chillar Amount</label>
+            <input type="text" class="form-input" id="calcChillar" value="10000000000" />
+          </div>
+
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Sikka</th>
+                <th>Chillar</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1 SIKKA</td>
+                <td>10,000,000,000 chillar</td>
+              </tr>
+              <tr>
+                <td>0.1 SIKKA</td>
+                <td>1,000,000,000 chillar</td>
+              </tr>
+              <tr>
+                <td>0.0000000001 SIKKA</td>
+                <td>1 chillar</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Right: SDK Specification Details -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⚙️ SDK Cryptography & Specs</div>
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.8;">
+            <p style="margin-bottom: 0.75rem;">
+              The Sikka SDK is built ground-up for post-quantum security using NIST-standardized lattice cryptography.
+            </p>
+            <ul style="padding-left: 1.25rem; margin-bottom: 0.5rem;">
+              <li><strong>Algorithm:</strong> NIST ML-DSA-87 (Dilithium Level 5)</li>
+              <li><strong>Derivation Standard:</strong> BIP-32/44 HD path (<code style="font-family: var(--font-mono);">m/44'/9999'/0'/0/i</code>)</li>
+              <li><strong>Address Encoding:</strong> Bech32m checksummed format (<code style="font-family: var(--font-mono);">sikka1...</code>)</li>
+              <li><strong>Mining Mechanism:</strong> SHA3-256 Proof-of-Work nonce calculation</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: SETTINGS -->
+    <div class="tab-content" id="tab-settings">
+      <div style="max-width: 720px; margin: 0 auto;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⚙️ Network & Node Settings</div>
+            <span class="badge badge-node">
+              <div class="status-dot"></div>
+              <span id="settingsNodeStatus">Active</span>
+            </span>
+          </div>
+
+          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+            Configure the Sikka RPC node endpoint used for UTXO queries, PoW quotes, and transaction broadcasting.
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Sikka Node Endpoint URL</label>
+            <input type="text" class="form-input" id="nodeUrlInput" placeholder="https://1.sikkalabs.com" value="https://1.sikkalabs.com" />
+          </div>
+
+          <div class="form-label" style="margin-top: 1rem;">Default Node Presets</div>
+          <div class="preset-group" style="margin-bottom: 1.25rem;">
+            <button class="btn-preset btn-node-preset" data-node="https://1.sikkalabs.com">1.sikkalabs.com (Main)</button>
+            <button class="btn-preset btn-node-preset" data-node="https://2.sikkalabs.com">2.sikkalabs.com (Backup)</button>
+            <button class="btn-preset btn-node-preset" data-node="http://localhost:8080">Localhost (8080)</button>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-primary" id="btnSaveNodeUrl">💾 Save Node Settings</button>
+            <button class="btn btn-secondary" id="btnTestNodeUrl">⚡ Test Connection</button>
+          </div>
+
+          <!-- Connection Status Result Box -->
+          <div id="nodeTestResult" style="display: none; margin-top: 1.25rem; padding: 1rem; border-radius: var(--radius-md); font-size: 0.82rem; font-family: var(--font-mono);"></div>
+
+          <hr style="border: none; border-top: 1px solid var(--border-light); margin: 1.5rem 0;" />
+
+          <div class="card-title" style="font-size: 0.95rem; margin-bottom: 0.75rem;">🔒 Wallet Preferences</div>
+          <div class="form-group">
+            <label class="form-label">HD Derivation Gap Limit</label>
+            <input type="number" class="form-input" id="gapLimitInput" value="10" min="1" max="50" />
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">
+              Maximum consecutive unused addresses scanned during balance discovery.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: LOGS -->
+    <div class="tab-content" id="tab-logs">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 Console Activity Log</div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-icon" id="btnCopyLogs">📋 Copy Logs</button>
+            <button class="btn-icon" id="btnClearLogs">🗑️ Clear</button>
+          </div>
+        </div>
+
+        <div class="log-box" id="logBox">Initializing Sikka Post-Quantum SDK...</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    Built with ⚡ by <a href="https://github.com/sikkalabs" target="_blank">Sikka Labs</a> &bull; Post-Quantum Cryptography &bull; ISC License
+  </footer>
+
+  <!-- Synchronous Global Helper Scripts -->
+  <script>
+    window.switchTab = function(targetTabId) {
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      const tabContents = document.querySelectorAll('.tab-content');
+
+      tabBtns.forEach(btn => {
+        if (btn.getAttribute('data-tab') === targetTabId) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      tabContents.forEach(content => {
+        if (content.id === targetTabId) {
+          content.classList.add('active');
+        } else {
+          content.classList.remove('active');
+        }
+      });
+    };
+  </script>
+
+  <!-- Script Module Loading SDK -->
+  <script type="module">
+    let SDK;
+    let currentNodeURL = localStorage.getItem('sikka_node_url') || 'https://1.sikkalabs.com';
+    let derivedAddressList = [];
+    let addressSubTab = 'unused';
+    let addressCurrentPage = 1;
+    const ADDRESS_PAGE_SIZE = 10;
+
+    let txHistoryList = [];
+    let txFilter = 'all';
+    let txCurrentPage = 1;
+    const TX_PAGE_SIZE = 10;
+
+    function log(msg) {
+      const logBox = document.getElementById('logBox');
+      if (logBox) {
+        const time = new Date().toLocaleTimeString();
+        logBox.textContent = `[${time}] ${msg}\n` + logBox.textContent;
+      }
+    }
+
+    function getSavedTxHistory() {
+      try {
+        return JSON.parse(localStorage.getItem('sikka_tx_history') || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    function saveTxHistoryItem(item) {
+      const history = getSavedTxHistory();
+      if (!history.some(t => t.txID === item.txID)) {
+        history.unshift(item);
+        localStorage.setItem('sikka_tx_history', JSON.stringify(history));
+      }
+      loadAndRenderHistory();
+    }
+
+    async function loadAndRenderHistory() {
+      let localItems = getSavedTxHistory();
+
+      if (activeHDWallet && typeof activeHDWallet.history === 'function') {
+        try {
+          const remoteHistory = await activeHDWallet.history(100, 20);
+          if (Array.isArray(remoteHistory)) {
+            remoteHistory.forEach(r => {
+              const mapped = {
+                txID: r.hash || r.txid || r.id || ('tx_' + Math.random().toString(36).substring(2, 9)),
+                type: r.type || (r.amount > 0 ? 'received' : 'sent'),
+                address: r.address || r.recipient || 'N/A',
+                amountSikka: r.amountSikka || (r.amount ? SDK.toSikka(r.amount) : '0'),
+                amountChillar: r.amount ? r.amount.toString() : '0',
+                timestamp: r.timestamp ? new Date(r.timestamp * 1000).toLocaleString() : new Date().toLocaleString(),
+                status: r.status || 'Confirmed'
+              };
+              if (!localItems.some(t => t.txID === mapped.txID)) {
+                localItems.push(mapped);
+              }
+            });
+          }
+        } catch (e) {
+          console.warn("Remote history query notice:", e.message);
+        }
+      }
+
+      txHistoryList = localItems;
+      renderHistoryTable();
+    }
+
+    function renderHistoryTable() {
+      const tbody = document.getElementById('historyTableBody');
+      const countSent = txHistoryList.filter(t => t.type === 'sent').length;
+      const countReceived = txHistoryList.filter(t => t.type === 'received').length;
+      const countAll = txHistoryList.length;
+
+      const elSent = document.getElementById('badgeTxSentCount');
+      const elRecv = document.getElementById('badgeTxReceivedCount');
+      const elAll = document.getElementById('badgeTxAllCount');
+
+      if (elSent) elSent.textContent = countSent;
+      if (elRecv) elRecv.textContent = countReceived;
+      if (elAll) elAll.textContent = countAll;
+
+      let filtered = txHistoryList;
+      if (txFilter === 'sent') filtered = txHistoryList.filter(t => t.type === 'sent');
+      if (txFilter === 'received') filtered = txHistoryList.filter(t => t.type === 'received');
+
+      const totalPages = Math.ceil(filtered.length / TX_PAGE_SIZE) || 1;
+      if (txCurrentPage > totalPages) txCurrentPage = totalPages;
+      if (txCurrentPage < 1) txCurrentPage = 1;
+
+      const startIdx = (txCurrentPage - 1) * TX_PAGE_SIZE;
+      const endIdx = Math.min(startIdx + TX_PAGE_SIZE, filtered.length);
+      const pageItems = filtered.slice(startIdx, endIdx);
+
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (pageItems.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+              No ${txFilter === 'all' ? '' : txFilter} transactions recorded yet.
+            </td>
+          </tr>
+        `;
+      } else {
+        pageItems.forEach(item => {
+          const tr = document.createElement('tr');
+          const isSent = item.type === 'sent';
+          const typeBadge = isSent 
+            ? `<span class="badge" style="background:#000; color:#fff; border-color:#000; font-size:0.65rem;">↗ SENT</span>`
+            : `<span class="badge" style="background:var(--bg-subtle); color:var(--text-main); font-size:0.65rem;">↙ RECV</span>`;
+          
+          const shortTxID = item.txID.length > 14 
+            ? item.txID.substring(0, 8) + '...' + item.txID.substring(item.txID.length - 4)
+            : item.txID;
+
+          tr.innerHTML = `
+            <td>${typeBadge}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.75rem;" title="${item.txID}">
+              ${shortTxID} <button class="btn-icon btn-copy-txid" data-tx="${item.txID}" style="padding:0.15rem 0.4rem; font-size:0.68rem;">Copy</button>
+            </td>
+            <td style="font-family: var(--font-mono); font-size: 0.75rem; word-break: break-all;">${item.address}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.78rem; font-weight: bold;">${item.amountSikka} SIKKA</td>
+            <td style="font-size: 0.72rem; color: var(--text-muted);">${item.timestamp}</td>
+            <td><span class="badge" style="font-size:0.65rem;">${item.status || 'Confirmed'}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('.btn-copy-txid').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const tx = btn.getAttribute('data-tx');
+            if (tx) {
+              navigator.clipboard.writeText(tx);
+              alert(`TxID copied to clipboard:\n${tx}`);
+            }
+          });
+        });
+      }
+
+      const pageInfo = document.getElementById('historyPageInfo');
+      if (pageInfo) {
+        if (filtered.length === 0) {
+          pageInfo.textContent = `0 transactions`;
+        } else {
+          pageInfo.textContent = `Showing ${startIdx + 1}-${endIdx} of ${filtered.length} (Page ${txCurrentPage} of ${totalPages})`;
+        }
+      }
+
+      const btnPrev = document.getElementById('btnHistoryPrev');
+      const btnNext = document.getElementById('btnHistoryNext');
+      if (btnPrev) btnPrev.disabled = txCurrentPage <= 1;
+      if (btnNext) btnNext.disabled = txCurrentPage >= totalPages;
+    }
+
+    async function populateAddressExplorer() {
+      if (!activeHDWallet) return;
+      derivedAddressList = [];
+      const nextCleanIndex = activeHDWallet.nextReceiveIndex || 0;
+      const countToDerive = Math.max(20, nextCleanIndex + 10);
+
+      for (let i = 0; i < countToDerive; i++) {
+        const addr = await activeHDWallet.getReceiveAddress(i);
+        const isUsed = i < nextCleanIndex;
+        derivedAddressList.push({
+          index: i,
+          path: `m/44'/9999'/0'/0/${i}`,
+          address: addr,
+          used: isUsed
+        });
+      }
+
+      renderAddressTable();
+    }
+
+    function renderAddressTable() {
+      const tbody = document.getElementById('addressTableBody');
+      const countUnused = derivedAddressList.filter(a => !a.used).length;
+      const countUsed = derivedAddressList.filter(a => a.used).length;
+      const countAll = derivedAddressList.length;
+
+      const elUnused = document.getElementById('badgeUnusedCount');
+      const elUsed = document.getElementById('badgeUsedCount');
+      const elAll = document.getElementById('badgeAllCount');
+
+      if (elUnused) elUnused.textContent = countUnused;
+      if (elUsed) elUsed.textContent = countUsed;
+      if (elAll) elAll.textContent = countAll;
+
+      let filtered = derivedAddressList;
+      if (addressSubTab === 'unused') {
+        filtered = derivedAddressList.filter(a => !a.used);
+      } else if (addressSubTab === 'used') {
+        filtered = derivedAddressList.filter(a => a.used);
+      }
+
+      const totalPages = Math.ceil(filtered.length / ADDRESS_PAGE_SIZE) || 1;
+      if (addressCurrentPage > totalPages) addressCurrentPage = totalPages;
+      if (addressCurrentPage < 1) addressCurrentPage = 1;
+
+      const startIdx = (addressCurrentPage - 1) * ADDRESS_PAGE_SIZE;
+      const endIdx = Math.min(startIdx + ADDRESS_PAGE_SIZE, filtered.length);
+      const pageItems = filtered.slice(startIdx, endIdx);
+
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (pageItems.length === 0) {
+        const emptyTr = document.createElement('tr');
+        emptyTr.innerHTML = `
+          <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+            No ${addressSubTab} addresses found.
+          </td>
+        `;
+        tbody.appendChild(emptyTr);
+      } else {
+        pageItems.forEach(item => {
+          const tr = document.createElement('tr');
+          const statusBadge = item.used 
+            ? `<span class="badge" style="background: #000; color: #fff; border-color: #000; font-size: 0.65rem;">USED</span>`
+            : `<span class="badge" style="background: var(--bg-subtle); border-color: var(--border-main); color: var(--text-secondary); font-size: 0.65rem;">UNUSED</span>`;
+          
+          tr.innerHTML = `
+            <td style="font-family: var(--font-mono); font-weight: bold; font-size: 0.75rem;">#${item.index}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.75rem;">${item.path}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.78rem; word-break: break-all;">${item.address}</td>
+            <td>${statusBadge}</td>
+            <td>
+              <button class="btn-icon btn-copy-row" data-address="${item.address}">Copy</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('.btn-copy-row').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const addr = btn.getAttribute('data-address');
+            if (addr) {
+              navigator.clipboard.writeText(addr);
+              alert(`Address copied to clipboard:\n${addr}`);
+            }
+          });
+        });
+      }
+
+      const pageInfo = document.getElementById('addressPageInfo');
+      if (pageInfo) {
+        if (filtered.length === 0) {
+          pageInfo.textContent = `0 addresses`;
+        } else {
+          pageInfo.textContent = `Showing ${startIdx + 1}-${endIdx} of ${filtered.length} (Page ${addressCurrentPage} of ${totalPages})`;
+        }
+      }
+
+      const btnPrev = document.getElementById('btnAddressPrev');
+      const btnNext = document.getElementById('btnAddressNext');
+      if (btnPrev) btnPrev.disabled = addressCurrentPage <= 1;
+      if (btnNext) btnNext.disabled = addressCurrentPage >= totalPages;
+    }
+
+    async function updatePowRequirementUI() {
+      const bitsEl = document.getElementById('powRequiredBitsVal');
+      const diffEl = document.getElementById('powDifficultyVal');
+      const timeEl = document.getElementById('powEstTimeVal');
+      const dagEl = document.getElementById('powDagDepthVal');
+      const pillEl = document.getElementById('powQuoteStatusPill');
+
+      if (!bitsEl) return;
+
+      try {
+        bitsEl.textContent = '⏳ ...';
+        if (SDK && SDK.APIClient) {
+          const client = new SDK.APIClient(currentNodeURL);
+          const status = await client.getNodeStatus();
+          const sampleTx = {
+            parents: status.tips ? status.tips.slice(0, 2) : [],
+            timestamp: Math.floor(Date.now() / 1000)
+          };
+
+          let requiredBits = 5;
+          try {
+            const quote = await client.getProofOfWorkQuote(sampleTx);
+            requiredBits = quote.required_bits;
+          } catch (e) {
+            // Default required bits
+          }
+
+          const attempts = Math.pow(2, requiredBits);
+          bitsEl.textContent = `${requiredBits} Bits`;
+          diffEl.textContent = `${attempts}x Hashes`;
+          timeEl.textContent = `< 1 sec`;
+          dagEl.textContent = `${(status.dagSize || status.height || 2212).toLocaleString()}`;
+          if (pillEl) {
+            pillEl.style.background = '#f4f4f5';
+            pillEl.style.color = '#000';
+            pillEl.innerHTML = `🟢 Live Node PoW Quote Ready (Target: <code>${requiredBits} bits</code>)`;
+          }
+        }
+      } catch (err) {
+        if (bitsEl) bitsEl.textContent = '5 Bits';
+        if (pillEl) pillEl.textContent = '⚡ Default Node PoW (5 Bits)';
+      }
+    }
+
+    function getHostFromURL(url) {
+      try {
+        const u = new URL(url.includes('://') ? url : 'https://' + url);
+        return u.hostname || u.host || url;
+      } catch {
+        return url.replace(/^https?:\/\//, '');
+      }
+    }
+
+    function updateNodeBadge(url) {
+      const label = document.getElementById('nodeUrlLabel');
+      if (label) {
+        label.textContent = getHostFromURL(url);
+      }
+    }
+
+    function saveNodeURL(url) {
+      if (!url) return;
+      let cleanUrl = url.trim();
+      if (!/^https?:\/\//i.test(cleanUrl)) {
+        cleanUrl = 'https://' + cleanUrl;
+      }
+      cleanUrl = cleanUrl.replace(/\/$/, '');
+      currentNodeURL = cleanUrl;
+      localStorage.setItem('sikka_node_url', cleanUrl);
+
+      const input = document.getElementById('nodeUrlInput');
+      if (input) input.value = cleanUrl;
+
+      updateNodeBadge(cleanUrl);
+
+      if (activeHDWallet && SDK && SDK.APIClient) {
+        activeHDWallet.api = new SDK.APIClient(cleanUrl);
+      }
+
+      log(`Node URL configured to: ${cleanUrl}`);
+    }
+
+    async function testNodeConnection(url) {
+      const resultDiv = document.getElementById('nodeTestResult');
+      if (!resultDiv) return;
+      resultDiv.style.display = 'block';
+      resultDiv.style.background = 'var(--bg-subtle)';
+      resultDiv.style.border = '1px solid var(--border-main)';
+      resultDiv.style.color = 'var(--text-main)';
+      resultDiv.innerHTML = `⏳ Testing connection to <code>${url}</code>...`;
+
+      const startTime = performance.now();
+      const cleanUrl = url.replace(/\/$/, '');
+
+      try {
+        if (SDK && SDK.APIClient) {
+          const tempClient = new SDK.APIClient(cleanUrl);
+          if (typeof tempClient.getNodeStatus === 'function') {
+            await tempClient.getNodeStatus();
+            const latency = Math.round(performance.now() - startTime);
+            resultDiv.style.background = '#f4f4f5';
+            resultDiv.style.border = '1px solid #000000';
+            resultDiv.style.color = '#000000';
+            resultDiv.innerHTML = `<strong>✅ Node Connected Successfully!</strong><br>Latency: ${latency}ms<br>Endpoint: <code>${cleanUrl}</code>`;
+            log(`Node connection test passed for ${cleanUrl} (${latency}ms)`);
+            return;
+          }
+        }
+
+        // Direct fetch without custom headers to avoid unnecessary preflight CORS blocks
+        const res = await fetch(`${cleanUrl}/v1/status`, { method: 'GET' });
+        const latency = Math.round(performance.now() - startTime);
+
+        if (res.ok || res.status === 200 || res.status === 404) {
+          resultDiv.style.background = '#f4f4f5';
+          resultDiv.style.border = '1px solid #000000';
+          resultDiv.style.color = '#000000';
+          resultDiv.innerHTML = `<strong>✅ Node Reachable!</strong><br>Status: ${res.status} ${res.statusText || 'OK'}<br>Latency: ${latency}ms<br>Endpoint: <code>${cleanUrl}</code>`;
+          log(`Node connection test passed for ${cleanUrl} (${latency}ms)`);
+        } else {
+          throw new Error(`Node returned HTTP status ${res.status}`);
+        }
+      } catch (err) {
+        resultDiv.style.background = '#f4f4f5';
+        resultDiv.style.border = '1px solid #000000';
+        resultDiv.style.color = '#000000';
+        resultDiv.innerHTML = `<strong>⚠️ Node Test Notice:</strong> ${err.message}<br><span style="font-size:0.75rem; color:var(--text-muted);">Note: "Failed to fetch" usually indicates browser CORS policy restriction or that the node server is currently offline.</span><br>Endpoint: <code>${cleanUrl}</code>`;
+        log(`Node connection test note for ${cleanUrl}: ${err.message}`);
+      }
+    }
+
+    // Global tab switching helper
+    window.switchTab = function(targetTabId) {
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      const tabContents = document.querySelectorAll('.tab-content');
+
+      tabBtns.forEach(btn => {
+        if (btn.getAttribute('data-tab') === targetTabId) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      tabContents.forEach(content => {
+        if (content.id === targetTabId) {
+          content.classList.add('active');
+        } else {
+          content.classList.remove('active');
+        }
+      });
+    };
+
+    // Global seed visibility toggle helper
+    window.toggleSeed = function() {
+      const container = document.getElementById('seedContainer');
+      const btn = document.getElementById('btnToggleSeed');
+      if (!container) return;
+      const isHidden = window.getComputedStyle(container).display === 'none';
+      container.style.display = isHidden ? 'block' : 'none';
+      if (btn) {
+        btn.textContent = isHidden ? '🙈 Hide Seed' : '👁️ Show Seed';
+      }
+    };
+
+    function setupTabs() {
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.getAttribute('data-tab');
+          window.switchTab(target);
+        });
+      });
+    }
+
+    async function initSDK() {
+      log("Loading Sikka SDK module from GitHub CDN...");
+      try {
+        SDK = await import('https://cdn.jsdelivr.net/gh/sikkalabs/sdk@main/src/index.js');
+        log("Loaded Sikka SDK module successfully.");
+        await startWalletApp();
+      } catch (e) {
+        log("ERROR: Failed to load Sikka SDK module from GitHub CDN: " + e.message);
+      }
+    }
+
+    let activeHDWallet = null;
+
+    async function startWalletApp() {
+      setupTabs();
+
+      // Initialize Node URL settings UI
+      const nodeInput = document.getElementById('nodeUrlInput');
+      if (nodeInput) nodeInput.value = currentNodeURL;
+      updateNodeBadge(currentNodeURL);
+
+      // Node Presets
+      document.querySelectorAll('.btn-node-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetNode = btn.getAttribute('data-node');
+          saveNodeURL(targetNode);
+          testNodeConnection(targetNode);
+        });
+      });
+
+      document.getElementById('btnSaveNodeUrl')?.addEventListener('click', () => {
+        const val = document.getElementById('nodeUrlInput')?.value;
+        saveNodeURL(val);
+        alert(`Node URL saved: ${currentNodeURL}`);
+        refreshBalance().catch(() => {});
+      });
+
+      document.getElementById('btnTestNodeUrl')?.addEventListener('click', () => {
+        const val = document.getElementById('nodeUrlInput')?.value;
+        testNodeConnection(val || currentNodeURL);
+      });
+
+      // Lock Session Listener
+      document.getElementById('btnLockWallet')?.addEventListener('click', async () => {
+        sessionStorage.removeItem('sikka_active_mnemonic');
+        log("Wallet session locked. sessionStorage cache cleared.");
+        alert("Session cache cleared! Generating a fresh wallet...");
+        await loadWallet();
+      });
+
+      // Bind Event Listeners immediately before any async initialization
+      const btnNewWallet = document.getElementById('btnNewWallet');
+      if (btnNewWallet) {
+        btnNewWallet.addEventListener('click', async () => {
+          log("Generating fresh 24-word seed phrase...");
+          sessionStorage.removeItem('sikka_active_mnemonic');
+          btnNewWallet.disabled = true;
+          btnNewWallet.textContent = "⏳ Generating...";
+          await loadWallet();
+          btnNewWallet.disabled = false;
+          btnNewWallet.textContent = "✨ New 24-Word Seed";
+          
+          // Auto-reveal the newly generated seed
+          const container = document.getElementById('seedContainer');
+          const toggleBtn = document.getElementById('btnToggleSeed');
+          if (container) container.style.display = 'block';
+          if (toggleBtn) toggleBtn.textContent = '🙈 Hide Seed';
+        });
+      }
+
+      const btnToggleSeed = document.getElementById('btnToggleSeed');
+      if (btnToggleSeed) {
+        btnToggleSeed.addEventListener('click', () => {
+          window.toggleSeed();
+        });
+      }
+
+      document.getElementById('btnImportMnemonic')?.addEventListener('click', async () => {
+        const text = document.getElementById('importMnemonicInput').value.trim();
+        if (!text) {
+          alert("Please enter a valid seed phrase.");
+          return;
+        }
+        if (!SDK.isValidMnemonic(text)) {
+          alert("Invalid BIP-39 mnemonic phrase!");
+          return;
+        }
+        log("Restoring wallet from provided seed phrase...");
+        sessionStorage.removeItem('sikka_active_mnemonic');
+        await loadWallet(text);
+        window.switchTab('tab-home');
+      });
+
+      const copyPrimary = () => {
+        const addr = document.getElementById('primaryAddress').textContent;
+        if (addr && !addr.includes('Generating')) {
+          navigator.clipboard.writeText(addr);
+          alert("Primary address copied to clipboard!");
+        }
+      };
+
+      document.getElementById('btnCopyAddress')?.addEventListener('click', copyPrimary);
+      document.getElementById('btnCopyReceiveTabAddress')?.addEventListener('click', copyPrimary);
+
+      document.getElementById('btnCopyHDAddress')?.addEventListener('click', () => {
+        const addr = document.getElementById('hdNextAddress').textContent;
+        if (addr && !addr.includes('Click')) {
+          navigator.clipboard.writeText(addr);
+          alert("Address copied to clipboard!");
+        }
+      });
+
+      document.getElementById('btnRefreshBalance')?.addEventListener('click', refreshBalance);
+
+      let currentHDDerivationIndex = 1;
+
+      document.getElementById('btnGetNewAddress')?.addEventListener('click', async () => {
+        if (!activeHDWallet) return;
+        const btn = document.getElementById('btnGetNewAddress');
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "⏳ Deriving...";
+        }
+
+        try {
+          log(`Deriving clean receive address #${currentHDDerivationIndex}...`);
+          const newAddr = await activeHDWallet.getReceiveAddress(currentHDDerivationIndex);
+          currentHDDerivationIndex++;
+          
+          const targetPill = document.getElementById('hdNextAddress');
+          if (targetPill) targetPill.textContent = newAddr;
+          
+          log(`Derived new address: ${newAddr}`);
+          await populateAddressExplorer();
+        } catch (err) {
+          log(`Address derivation error: ${err.message}`);
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "➕ Generate Next Clean Receive Address";
+          }
+        }
+      });
+
+      // Address Explorer Sub-Tab Listeners
+      document.querySelectorAll('.sub-tab-btn:not(.sub-tab-tx)').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.sub-tab-btn:not(.sub-tab-tx)').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          addressSubTab = btn.getAttribute('data-filter') || 'unused';
+          addressCurrentPage = 1;
+          renderAddressTable();
+        });
+      });
+
+      // Transaction History Sub-Tab Listeners
+      document.querySelectorAll('.sub-tab-tx').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.sub-tab-tx').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          txFilter = btn.getAttribute('data-txfilter') || 'all';
+          txCurrentPage = 1;
+          renderHistoryTable();
+        });
+      });
+
+      // Address Explorer Pagination Controls
+      document.getElementById('btnAddressPrev')?.addEventListener('click', () => {
+        if (addressCurrentPage > 1) {
+          addressCurrentPage--;
+          renderAddressTable();
+        }
+      });
+
+      document.getElementById('btnAddressNext')?.addEventListener('click', () => {
+        addressCurrentPage++;
+        renderAddressTable();
+      });
+
+      // Transaction History Pagination Controls
+      document.getElementById('btnHistoryPrev')?.addEventListener('click', () => {
+        if (txCurrentPage > 1) {
+          txCurrentPage--;
+          renderHistoryTable();
+        }
+      });
+
+      document.getElementById('btnHistoryNext')?.addEventListener('click', () => {
+        txCurrentPage++;
+        renderHistoryTable();
+      });
+
+      // History Refresh & Clear Buttons
+      document.getElementById('btnRefreshHistory')?.addEventListener('click', () => {
+        loadAndRenderHistory();
+      });
+
+      document.getElementById('btnClearHistory')?.addEventListener('click', () => {
+        if (confirm("Are you sure you want to clear your local transaction history?")) {
+          localStorage.removeItem('sikka_tx_history');
+          txHistoryList = [];
+          renderHistoryTable();
+          log("Local transaction history cleared.");
+        }
+      });
+
+      // Log Controls
+      document.getElementById('btnClearLogs')?.addEventListener('click', () => {
+        document.getElementById('logBox').textContent = '';
+      });
+
+      document.getElementById('btnCopyLogs')?.addEventListener('click', () => {
+        navigator.clipboard.writeText(document.getElementById('logBox').textContent);
+        alert("Logs copied to clipboard!");
+      });
+
+      // Amount Presets on Send Tab
+      document.querySelectorAll('.btn-preset:not(.btn-node-preset)').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const val = btn.getAttribute('data-amount');
+          const sendInput = document.getElementById('sendAmount');
+          if (sendInput) {
+            sendInput.value = val;
+            sendInput.dispatchEvent(new Event('input'));
+          }
+        });
+      });
+
+      // Unit Converter Listeners
+      const calcSikka = document.getElementById('calcSikka');
+      const calcChillar = document.getElementById('calcChillar');
+
+      calcSikka?.addEventListener('input', () => {
+        try {
+          const chillar = SDK.toChillar(calcSikka.value || "0");
+          calcChillar.value = chillar.toString();
+        } catch (e) {
+          calcChillar.value = "Invalid input";
+        }
+      });
+
+      calcChillar?.addEventListener('input', () => {
+        try {
+          const sikka = SDK.toSikka(calcChillar.value || "0");
+          calcSikka.value = sikka;
+        } catch (e) {
+          calcSikka.value = "Invalid input";
+        }
+      });
+
+      // Send Amount Listener
+      const sendAmountInput = document.getElementById('sendAmount');
+      const sendAmountChillar = document.getElementById('sendAmountChillar');
+
+      sendAmountInput?.addEventListener('input', () => {
+        try {
+          const chillar = SDK.toChillar(sendAmountInput.value || "0");
+          sendAmountChillar.textContent = `= ${chillar.toLocaleString()} chillar`;
+        } catch (e) {
+          sendAmountChillar.textContent = "= Invalid amount";
+        }
+      });
+
+      // Refresh PoW Quote Button
+      document.getElementById('btnRefreshPowQuote')?.addEventListener('click', () => {
+        updatePowRequirementUI();
+      });
+
+      // Send Transaction Handler
+      document.getElementById('btnSend')?.addEventListener('click', sendTransaction);
+
+      log(`Initializing new 24-word BIP-39 HD Wallet (${getHostFromURL(currentNodeURL)})...`);
+      updatePowRequirementUI();
+      await loadWallet();
+    }
+
+    async function loadWallet(mnemonicStr) {
+      try {
+        let seedToUse = mnemonicStr;
+        if (!seedToUse) {
+          const cachedMnemonic = sessionStorage.getItem('sikka_active_mnemonic');
+          if (cachedMnemonic && SDK && SDK.isValidMnemonic && SDK.isValidMnemonic(cachedMnemonic)) {
+            seedToUse = cachedMnemonic;
+            log("Restored wallet session from sessionStorage cache.");
+          }
+        }
+
+        const gapLimit = parseInt(document.getElementById('gapLimitInput')?.value || "10", 10);
+        activeHDWallet = await SDK.createHDWallet({
+          mnemonic: seedToUse,
+          nodeURL: currentNodeURL,
+          gapLimit: gapLimit
+        });
+
+        if (activeHDWallet && activeHDWallet.mnemonic) {
+          sessionStorage.setItem('sikka_active_mnemonic', activeHDWallet.mnemonic);
+        }
+
+        const primaryAddr = await activeHDWallet.getReceiveAddress(0);
+
+        document.getElementById('primaryAddress').textContent = primaryAddr;
+        
+        const receiveTabAddr = document.getElementById('receiveTabAddress');
+        if (receiveTabAddr) {
+          receiveTabAddr.textContent = primaryAddr;
+        }
+
+        updateQRCode(primaryAddr);
+        renderMnemonicGrid(activeHDWallet.mnemonic);
+        await populateAddressExplorer();
+        await loadAndRenderHistory();
+
+        log(`Wallet Active (${getHostFromURL(currentNodeURL)}). Address: ${primaryAddr}`);
+        refreshBalance().catch(e => log("Balance refresh note: " + e.message));
+      } catch (err) {
+        log("Error creating wallet: " + err.message);
+      }
+    }
+
+    function updateQRCode(address) {
+      const qrImg = document.getElementById('qrCodeImg');
+      if (qrImg && address && !address.includes('Generating')) {
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(address)}`;
+      }
+    }
+
+    function renderMnemonicGrid(mnemonic) {
+      const words = mnemonic.split(' ');
+      const grid = document.getElementById('mnemonicGrid');
+      grid.innerHTML = '';
+
+      words.forEach((w, idx) => {
+        const item = document.createElement('div');
+        item.className = 'word-badge';
+        item.innerHTML = `<span class="word-num">${idx + 1}.</span> <span class="word-val">${w}</span>`;
+        grid.appendChild(item);
+      });
+    }
+
+    async function refreshBalance() {
+      if (!activeHDWallet) return;
+      log("Scanning UTXOs across HD wallet addresses...");
+      try {
+        const balChillar = await activeHDWallet.balance();
+        const balSikka = SDK.toSikka(balChillar);
+
+        document.getElementById('balanceSikka').innerHTML = `${balSikka} <span style="font-size: 1.2rem; font-weight: 600;">SIKKA</span>`;
+        document.getElementById('balanceChillar').textContent = `${BigInt(balChillar).toLocaleString()} chillar`;
+        log(`Balance updated: ${balSikka} Sikka (${balChillar} chillar)`);
+      } catch (err) {
+        log("Balance check notice: " + err.message);
+      }
+    }
+
+    async function sendTransaction() {
+      const recipient = document.getElementById('sendRecipient').value.trim();
+      const amountStr = document.getElementById('sendAmount').value.trim();
+
+      if (!recipient) {
+        alert("Please enter a recipient address");
+        return;
+      }
+
+      try {
+        SDK.validateAddress(recipient);
+      } catch (e) {
+        alert("Invalid Sikka address: " + e.message);
+        return;
+      }
+
+      let amountChillar;
+      try {
+        amountChillar = SDK.toChillar(amountStr);
+      } catch (e) {
+        alert("Invalid send amount");
+        return;
+      }
+
+      const powBox = document.getElementById('powBox');
+      const powProgressBar = document.getElementById('powProgressBar');
+      const powStatusText = document.getElementById('powStatusText');
+      const powBitsText = document.getElementById('powBitsText');
+
+      powBox.style.display = 'block';
+      powProgressBar.style.width = '20%';
+      powStatusText.textContent = '⛏️ Fetching PoW Quote from Node...';
+
+      try {
+        log(`Initiating send: ${amountStr} Sikka -> ${recipient}...`);
+        
+        powProgressBar.style.width = '60%';
+        powStatusText.textContent = '⛏️ Mining SHA3-256 PoW Nonce...';
+        
+        const result = await activeHDWallet.send(amountChillar, recipient);
+        
+        powProgressBar.style.width = '100%';
+        powStatusText.textContent = '✅ Transaction Broadcast Successfully!';
+        log(`Transaction Success! TxID: ${result.txID}`);
+
+        saveTxHistoryItem({
+          txID: result.txID || ('tx_' + Math.random().toString(36).substring(2, 9)),
+          type: 'sent',
+          address: recipient,
+          amountSikka: amountStr,
+          amountChillar: amountChillar.toString(),
+          timestamp: new Date().toLocaleString(),
+          status: 'Confirmed'
+        });
+
+        alert(`Transaction Sent Successfully!\nTxID: ${result.txID}`);
+        await refreshBalance();
+      } catch (err) {
+        powStatusText.textContent = '❌ Transaction Failed';
+        log(`Send Failed: ${err.message}`);
+        alert("Transaction Failed: " + err.message);
+      }
+    }
+
+    initSDK();
+  </script>
+</body>
+</html>
