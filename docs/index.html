@@ -1028,10 +1028,10 @@
         </div>
       </div>
 
-      <!-- HD Address Explorer: Sub-Tabbed & Paginated Table -->
+      <!-- HD Receive Address Explorer: Sub-Tabbed & Paginated Table -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">📑 Derived Address Explorer</div>
+          <div class="card-title">📥 Derived Receive Address Explorer</div>
           <span class="badge" style="background: var(--bg-black); color: #fff;">10 Items / Page</span>
         </div>
 
@@ -1078,6 +1078,60 @@
           <div style="display: flex; gap: 0.5rem; align-items: center;">
             <button class="btn-icon" id="btnAddressPrev">◄ Prev</button>
             <button class="btn-icon" id="btnAddressNext">Next ►</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- HD Change Address Explorer: Sub-Tabbed & Paginated Table -->
+      <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+          <div class="card-title">🔄 Derived Change Address Explorer</div>
+          <span class="badge" style="background: var(--bg-black); color: #fff;">10 Items / Page</span>
+        </div>
+
+        <!-- Sub-Tabs Navigation -->
+        <div class="sub-tabs-wrapper">
+          <div class="sub-tabs-nav">
+            <button class="sub-tab-btn sub-tab-change active" data-changefilter="unused">
+              🟢 Unused Addresses <span class="tab-badge" id="badgeChangeUnusedCount">0</span>
+            </button>
+            <button class="sub-tab-btn sub-tab-change" data-changefilter="used">
+              🔴 Used Addresses <span class="tab-badge" id="badgeChangeUsedCount">0</span>
+            </button>
+            <button class="sub-tab-btn sub-tab-change" data-changefilter="all">
+              📑 All Addresses <span class="tab-badge" id="badgeChangeAllCount">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Address Table -->
+        <div class="address-table-wrapper">
+          <table class="address-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th style="width: 170px;">Derivation Path</th>
+                <th>Bech32m Address</th>
+                <th style="width: 90px;">Status</th>
+                <th style="width: 80px;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="changeAddressTableBody">
+              <tr>
+                <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                  Generating address table...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-bar">
+          <div id="changeAddressPageInfo">Showing 0-0 of 0 addresses</div>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="btn-icon" id="btnChangeAddressPrev">◄ Prev</button>
+            <button class="btn-icon" id="btnChangeAddressNext">Next ►</button>
           </div>
         </div>
       </div>
@@ -1252,6 +1306,11 @@
     let derivedAddressList = [];
     let addressSubTab = 'unused';
     let addressCurrentPage = 1;
+
+    let changeDerivedAddressList = [];
+    let changeSubTab = 'unused';
+    let changeAddressCurrentPage = 1;
+
     const ADDRESS_PAGE_SIZE = 10;
 
     let txHistoryList = [];
@@ -1405,19 +1464,19 @@
       if (btnNext) btnNext.disabled = txCurrentPage >= totalPages;
     }
 
-    async function populateAddressExplorer() {
+    async function ensureDerivedReceiveAddresses(targetCount) {
       if (!activeHDWallet) return;
-      derivedAddressList = [];
-      
+      const currentLen = derivedAddressList.length;
+      if (currentLen >= targetCount) return;
+
       const scan = typeof activeHDWallet.scanAddresses === 'function' 
         ? await activeHDWallet.scanAddresses() 
         : { usedAddresses: [], nextReceiveIndex: 0 };
 
       const usedAddrsSet = new Set((scan.usedAddresses || []).map(u => u.address));
       const nextCleanIndex = scan.nextReceiveIndex || activeHDWallet.nextReceiveIndex || 0;
-      const countToDerive = Math.max(20, nextCleanIndex + 10);
 
-      for (let i = 0; i < countToDerive; i++) {
+      for (let i = currentLen; i < targetCount; i++) {
         const addr = await activeHDWallet.getReceiveAddress(i);
         const isUsed = usedAddrsSet.has(addr) || i < nextCleanIndex;
         derivedAddressList.push({
@@ -1427,8 +1486,49 @@
           used: isUsed
         });
       }
+    }
+
+    async function ensureDerivedChangeAddresses(targetCount) {
+      if (!activeHDWallet) return;
+      const currentLen = changeDerivedAddressList.length;
+      if (currentLen >= targetCount) return;
+
+      const scan = typeof activeHDWallet.scanAddresses === 'function' 
+        ? await activeHDWallet.scanAddresses() 
+        : { usedAddresses: [], nextChangeIndex: 0 };
+
+      const usedAddrsSet = new Set((scan.usedAddresses || []).map(u => u.address));
+      const nextCleanIndex = scan.nextChangeIndex || activeHDWallet.nextChangeIndex || 0;
+
+      for (let i = currentLen; i < targetCount; i++) {
+        const addr = await activeHDWallet.getChangeAddress(i);
+        const isUsed = usedAddrsSet.has(addr) || i < nextCleanIndex;
+        changeDerivedAddressList.push({
+          index: i,
+          path: `m/44'/9999'/0'/1/${i}`,
+          address: addr,
+          used: isUsed
+        });
+      }
+    }
+
+    async function populateAddressExplorer() {
+      if (!activeHDWallet) return;
+      derivedAddressList = [];
+      changeDerivedAddressList = [];
+
+      const scan = typeof activeHDWallet.scanAddresses === 'function' 
+        ? await activeHDWallet.scanAddresses() 
+        : { usedAddresses: [], nextReceiveIndex: 0, nextChangeIndex: 0 };
+
+      const initialReceiveCount = Math.max(20, (scan.nextReceiveIndex || 0) + 10);
+      const initialChangeCount = Math.max(20, (scan.nextChangeIndex || 0) + 10);
+
+      await ensureDerivedReceiveAddresses(initialReceiveCount);
+      await ensureDerivedChangeAddresses(initialChangeCount);
 
       renderAddressTable();
+      renderChangeAddressTable();
     }
 
     function renderAddressTable() {
@@ -1441,9 +1541,9 @@
       const elUsed = document.getElementById('badgeUsedCount');
       const elAll = document.getElementById('badgeAllCount');
 
-      if (elUnused) elUnused.textContent = countUnused;
+      if (elUnused) elUnused.textContent = `${countUnused}+`;
       if (elUsed) elUsed.textContent = countUsed;
-      if (elAll) elAll.textContent = countAll;
+      if (elAll) elAll.textContent = `${countAll}+`;
 
       let filtered = derivedAddressList;
       if (addressSubTab === 'unused') {
@@ -1452,8 +1552,6 @@
         filtered = derivedAddressList.filter(a => a.used);
       }
 
-      const totalPages = Math.ceil(filtered.length / ADDRESS_PAGE_SIZE) || 1;
-      if (addressCurrentPage > totalPages) addressCurrentPage = totalPages;
       if (addressCurrentPage < 1) addressCurrentPage = 1;
 
       const startIdx = (addressCurrentPage - 1) * ADDRESS_PAGE_SIZE;
@@ -1467,7 +1565,7 @@
         const emptyTr = document.createElement('tr');
         emptyTr.innerHTML = `
           <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-            No ${addressSubTab} addresses found.
+            No ${addressSubTab} addresses found on this page.
           </td>
         `;
         tbody.appendChild(emptyTr);
@@ -1503,17 +1601,106 @@
 
       const pageInfo = document.getElementById('addressPageInfo');
       if (pageInfo) {
-        if (filtered.length === 0) {
-          pageInfo.textContent = `0 addresses`;
-        } else {
-          pageInfo.textContent = `Showing ${startIdx + 1}-${endIdx} of ${filtered.length} (Page ${addressCurrentPage} of ${totalPages})`;
-        }
+        pageInfo.textContent = `Showing ${startIdx + 1}-${endIdx} of ${filtered.length} derived (Page ${addressCurrentPage})`;
       }
 
       const btnPrev = document.getElementById('btnAddressPrev');
       const btnNext = document.getElementById('btnAddressNext');
       if (btnPrev) btnPrev.disabled = addressCurrentPage <= 1;
-      if (btnNext) btnNext.disabled = addressCurrentPage >= totalPages;
+      if (btnNext) {
+        if (addressSubTab === 'used') {
+          const maxPages = Math.ceil(filtered.length / ADDRESS_PAGE_SIZE) || 1;
+          btnNext.disabled = addressCurrentPage >= maxPages;
+        } else {
+          btnNext.disabled = false;
+        }
+      }
+    }
+
+    function renderChangeAddressTable() {
+      const tbody = document.getElementById('changeAddressTableBody');
+      const countUnused = changeDerivedAddressList.filter(a => !a.used).length;
+      const countUsed = changeDerivedAddressList.filter(a => a.used).length;
+      const countAll = changeDerivedAddressList.length;
+
+      const elUnused = document.getElementById('badgeChangeUnusedCount');
+      const elUsed = document.getElementById('badgeChangeUsedCount');
+      const elAll = document.getElementById('badgeChangeAllCount');
+
+      if (elUnused) elUnused.textContent = `${countUnused}+`;
+      if (elUsed) elUsed.textContent = countUsed;
+      if (elAll) elAll.textContent = `${countAll}+`;
+
+      let filtered = changeDerivedAddressList;
+      if (changeSubTab === 'unused') {
+        filtered = changeDerivedAddressList.filter(a => !a.used);
+      } else if (changeSubTab === 'used') {
+        filtered = changeDerivedAddressList.filter(a => a.used);
+      }
+
+      if (changeAddressCurrentPage < 1) changeAddressCurrentPage = 1;
+
+      const startIdx = (changeAddressCurrentPage - 1) * ADDRESS_PAGE_SIZE;
+      const endIdx = Math.min(startIdx + ADDRESS_PAGE_SIZE, filtered.length);
+      const pageItems = filtered.slice(startIdx, endIdx);
+
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (pageItems.length === 0) {
+        const emptyTr = document.createElement('tr');
+        emptyTr.innerHTML = `
+          <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+            No ${changeSubTab} change addresses found on this page.
+          </td>
+        `;
+        tbody.appendChild(emptyTr);
+      } else {
+        pageItems.forEach(item => {
+          const tr = document.createElement('tr');
+          const statusBadge = item.used 
+            ? `<span class="badge" style="background: #000; color: #fff; border-color: #000; font-size: 0.65rem;">USED</span>`
+            : `<span class="badge" style="background: var(--bg-subtle); border-color: var(--border-main); color: var(--text-secondary); font-size: 0.65rem;">UNUSED</span>`;
+          
+          tr.innerHTML = `
+            <td style="font-family: var(--font-mono); font-weight: bold; font-size: 0.75rem;">#${item.index}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.75rem;">${item.path}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.78rem; word-break: break-all;">${item.address}</td>
+            <td>${statusBadge}</td>
+            <td>
+              <button class="btn-icon btn-copy-row" data-address="${item.address}">Copy</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('.btn-copy-row').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const addr = btn.getAttribute('data-address');
+            if (addr) {
+              navigator.clipboard.writeText(addr);
+              alert(`Address copied to clipboard:\n${addr}`);
+            }
+          });
+        });
+      }
+
+      const pageInfo = document.getElementById('changeAddressPageInfo');
+      if (pageInfo) {
+        pageInfo.textContent = `Showing ${startIdx + 1}-${endIdx} of ${filtered.length} derived (Page ${changeAddressCurrentPage})`;
+      }
+
+      const btnPrev = document.getElementById('btnChangeAddressPrev');
+      const btnNext = document.getElementById('btnChangeAddressNext');
+      if (btnPrev) btnPrev.disabled = changeAddressCurrentPage <= 1;
+      if (btnNext) {
+        if (changeSubTab === 'used') {
+          const maxPages = Math.ceil(filtered.length / ADDRESS_PAGE_SIZE) || 1;
+          btnNext.disabled = changeAddressCurrentPage >= maxPages;
+        } else {
+          btnNext.disabled = false;
+        }
+      }
     }
 
     async function updatePowRequirementUI(throwOnError = false) {
@@ -1837,14 +2024,25 @@
         }
       });
 
-      // Address Explorer Sub-Tab Listeners
-      document.querySelectorAll('.sub-tab-btn:not(.sub-tab-tx)').forEach(btn => {
+      // Receive Address Explorer Sub-Tab Listeners
+      document.querySelectorAll('.sub-tab-btn:not(.sub-tab-tx):not(.sub-tab-change)').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.sub-tab-btn:not(.sub-tab-tx)').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.sub-tab-btn:not(.sub-tab-tx):not(.sub-tab-change)').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           addressSubTab = btn.getAttribute('data-filter') || 'unused';
           addressCurrentPage = 1;
           renderAddressTable();
+        });
+      });
+
+      // Change Address Explorer Sub-Tab Listeners
+      document.querySelectorAll('.sub-tab-change').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.sub-tab-change').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          changeSubTab = btn.getAttribute('data-changefilter') || 'unused';
+          changeAddressCurrentPage = 1;
+          renderChangeAddressTable();
         });
       });
 
@@ -1859,7 +2057,7 @@
         });
       });
 
-      // Address Explorer Pagination Controls
+      // Receive Address Explorer Pagination Controls
       document.getElementById('btnAddressPrev')?.addEventListener('click', () => {
         if (addressCurrentPage > 1) {
           addressCurrentPage--;
@@ -1867,9 +2065,36 @@
         }
       });
 
-      document.getElementById('btnAddressNext')?.addEventListener('click', () => {
+      document.getElementById('btnAddressNext')?.addEventListener('click', async () => {
         addressCurrentPage++;
+        const needed = addressCurrentPage * ADDRESS_PAGE_SIZE;
+        if (needed > derivedAddressList.length) {
+          const btn = document.getElementById('btnAddressNext');
+          if (btn) btn.disabled = true;
+          await ensureDerivedReceiveAddresses(needed + 10);
+          if (btn) btn.disabled = false;
+        }
         renderAddressTable();
+      });
+
+      // Change Address Explorer Pagination Controls
+      document.getElementById('btnChangeAddressPrev')?.addEventListener('click', () => {
+        if (changeAddressCurrentPage > 1) {
+          changeAddressCurrentPage--;
+          renderChangeAddressTable();
+        }
+      });
+
+      document.getElementById('btnChangeAddressNext')?.addEventListener('click', async () => {
+        changeAddressCurrentPage++;
+        const needed = changeAddressCurrentPage * ADDRESS_PAGE_SIZE;
+        if (needed > changeDerivedAddressList.length) {
+          const btn = document.getElementById('btnChangeAddressNext');
+          if (btn) btn.disabled = true;
+          await ensureDerivedChangeAddresses(needed + 10);
+          if (btn) btn.disabled = false;
+        }
+        renderChangeAddressTable();
       });
 
       // Transaction History Pagination Controls
