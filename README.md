@@ -212,7 +212,7 @@ self.onmessage = async (e) => {
 
 An interactive, post-quantum web wallet UI demo is included in [public/index.html](file:///home/jesus/Projects/sikkalabs/sdk/public/index.html).
 
-It loads the SDK via `https://esm.sh/gh/sikkalabs/sdk` or `https://cdn.jsdelivr.net/gh/sikkalabs/sdk@main/src/index.js` (with fallback to local source) and demonstrates:
+It loads the SDK directly from GitHub via `https://cdn.jsdelivr.net/gh/sikkalabs/sdk@main/src/index.js` or `https://esm.sh/gh/sikkalabs/sdk` and demonstrates:
 - 24-word seed generation & wallet restoration.
 - HD address derivation (`account/branch/index`).
 - Real-time balance queries across spendable UTXOs.

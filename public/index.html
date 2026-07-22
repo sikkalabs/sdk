@@ -645,7 +645,7 @@
     Built with ⚡ by <a href="https://github.com/sikkalabs" target="_blank">Sikka Labs</a> &bull; Post-Quantum Cryptography &bull; ISC License
   </footer>
 
-  <!-- Script Module Loading SDK via local or esm.sh -->
+  <!-- Script Module Loading SDK directly from GitHub -->
   <script type="module">
     let SDK;
 
@@ -656,11 +656,8 @@
     }
 
     async function initSDK() {
-      log("Loading SDK module...");
+      log("Loading SDK module from GitHub...");
       const possibleTargets = [
-        './src/index.js',
-        '../src/index.js',
-        '/src/index.js',
         'https://cdn.jsdelivr.net/gh/sikkalabs/sdk@main/src/index.js',
         'https://esm.sh/gh/sikkalabs/sdk?bundle&target=es2022'
       ];
@@ -676,7 +673,7 @@
         }
       }
 
-      log("ERROR: Failed to load SDK module from all local and GitHub CDN sources.");
+      log("ERROR: Failed to load SDK module from GitHub CDN sources.");
     }
 
     let activeHDWallet = null;
