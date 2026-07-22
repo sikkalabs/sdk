@@ -1713,13 +1713,34 @@
 
       document.getElementById('btnRefreshBalance')?.addEventListener('click', refreshBalance);
 
+      let currentHDDerivationIndex = 1;
+
       document.getElementById('btnGetNewAddress')?.addEventListener('click', async () => {
         if (!activeHDWallet) return;
-        log("Deriving next clean receive address...");
-        const newAddr = await activeHDWallet.getNewUnusedAddress();
-        document.getElementById('hdNextAddress').textContent = newAddr;
-        log(`Derived new address: ${newAddr}`);
-        await populateAddressExplorer();
+        const btn = document.getElementById('btnGetNewAddress');
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "⏳ Deriving...";
+        }
+
+        try {
+          log(`Deriving clean receive address #${currentHDDerivationIndex}...`);
+          const newAddr = await activeHDWallet.getReceiveAddress(currentHDDerivationIndex);
+          currentHDDerivationIndex++;
+          
+          const targetPill = document.getElementById('hdNextAddress');
+          if (targetPill) targetPill.textContent = newAddr;
+          
+          log(`Derived new address: ${newAddr}`);
+          await populateAddressExplorer();
+        } catch (err) {
+          log(`Address derivation error: ${err.message}`);
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "➕ Generate Next Clean Receive Address";
+          }
+        }
       });
 
       // Address Explorer Sub-Tab Listeners
