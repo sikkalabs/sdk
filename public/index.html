@@ -755,6 +755,7 @@
       <button class="tab-btn active" data-tab="tab-wallet">💳 WALLET</button>
       <button class="tab-btn" data-tab="tab-send">💸 SEND</button>
       <button class="tab-btn" data-tab="tab-receive">📥 RECEIVE</button>
+      <button class="tab-btn" data-tab="tab-history">📜 HISTORY</button>
       <button class="tab-btn" data-tab="tab-tools">🛠️ TOOLS</button>
       <button class="tab-btn" data-tab="tab-settings">⚙️ SETTINGS</button>
       <button class="tab-btn" data-tab="tab-logs">📋 LOGS</button>
@@ -982,7 +983,67 @@
       </div>
     </div>
 
-    <!-- TAB 4: TOOLS -->
+    <!-- TAB 4: HISTORY -->
+    <div class="tab-content" id="tab-history">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📜 Transaction History</div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-icon" id="btnRefreshHistory">🔄 Refresh</button>
+            <button class="btn-icon" id="btnClearHistory">🗑️ Clear History</button>
+          </div>
+        </div>
+
+        <!-- Sub-Tabs Navigation for History -->
+        <div class="sub-tabs-wrapper">
+          <div class="sub-tabs-nav">
+            <button class="sub-tab-btn sub-tab-tx active" data-txfilter="all">
+              📑 All <span class="tab-badge" id="badgeTxAllCount">0</span>
+            </button>
+            <button class="sub-tab-btn sub-tab-tx" data-txfilter="sent">
+              ↗ Sent <span class="tab-badge" id="badgeTxSentCount">0</span>
+            </button>
+            <button class="sub-tab-btn sub-tab-tx" data-txfilter="received">
+              ↙ Received <span class="tab-badge" id="badgeTxReceivedCount">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="address-table-wrapper">
+          <table class="address-table">
+            <thead>
+              <tr>
+                <th style="width: 80px;">Type</th>
+                <th style="width: 140px;">TxID</th>
+                <th>Address</th>
+                <th style="width: 130px;">Amount</th>
+                <th style="width: 150px;">Time</th>
+                <th style="width: 90px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                  No transaction history recorded yet.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- History Pagination -->
+        <div class="pagination-bar">
+          <div id="historyPageInfo">Showing 0-0 of 0 transactions</div>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="btn-icon" id="btnHistoryPrev">◄ Prev</button>
+            <button class="btn-icon" id="btnHistoryNext">Next ►</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: TOOLS -->
     <div class="tab-content" id="tab-tools">
       <div class="grid-two-col">
         <!-- Left: Unit Converter -->
@@ -1153,12 +1214,153 @@
     let addressCurrentPage = 1;
     const ADDRESS_PAGE_SIZE = 10;
 
+    let txHistoryList = [];
+    let txFilter = 'all';
+    let txCurrentPage = 1;
+    const TX_PAGE_SIZE = 10;
+
     function log(msg) {
       const logBox = document.getElementById('logBox');
       if (logBox) {
         const time = new Date().toLocaleTimeString();
         logBox.textContent = `[${time}] ${msg}\n` + logBox.textContent;
       }
+    }
+
+    function getSavedTxHistory() {
+      try {
+        return JSON.parse(localStorage.getItem('sikka_tx_history') || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    function saveTxHistoryItem(item) {
+      const history = getSavedTxHistory();
+      if (!history.some(t => t.txID === item.txID)) {
+        history.unshift(item);
+        localStorage.setItem('sikka_tx_history', JSON.stringify(history));
+      }
+      loadAndRenderHistory();
+    }
+
+    async function loadAndRenderHistory() {
+      let localItems = getSavedTxHistory();
+
+      if (activeHDWallet && typeof activeHDWallet.history === 'function') {
+        try {
+          const remoteHistory = await activeHDWallet.history(50);
+          if (Array.isArray(remoteHistory)) {
+            remoteHistory.forEach(r => {
+              const mapped = {
+                txID: r.hash || r.txid || r.id || ('tx_' + Math.random().toString(36).substring(2, 9)),
+                type: r.type || (r.amount > 0 ? 'received' : 'sent'),
+                address: r.address || r.recipient || 'N/A',
+                amountSikka: r.amountSikka || (r.amount ? SDK.toSikka(r.amount) : '0'),
+                amountChillar: r.amount ? r.amount.toString() : '0',
+                timestamp: r.timestamp ? new Date(r.timestamp * 1000).toLocaleString() : new Date().toLocaleString(),
+                status: r.status || 'Confirmed'
+              };
+              if (!localItems.some(t => t.txID === mapped.txID)) {
+                localItems.push(mapped);
+              }
+            });
+          }
+        } catch (e) {
+          console.warn("Remote history query notice:", e.message);
+        }
+      }
+
+      txHistoryList = localItems;
+      renderHistoryTable();
+    }
+
+    function renderHistoryTable() {
+      const tbody = document.getElementById('historyTableBody');
+      const countSent = txHistoryList.filter(t => t.type === 'sent').length;
+      const countReceived = txHistoryList.filter(t => t.type === 'received').length;
+      const countAll = txHistoryList.length;
+
+      const elSent = document.getElementById('badgeTxSentCount');
+      const elRecv = document.getElementById('badgeTxReceivedCount');
+      const elAll = document.getElementById('badgeTxAllCount');
+
+      if (elSent) elSent.textContent = countSent;
+      if (elRecv) elRecv.textContent = countReceived;
+      if (elAll) elAll.textContent = countAll;
+
+      let filtered = txHistoryList;
+      if (txFilter === 'sent') filtered = txHistoryList.filter(t => t.type === 'sent');
+      if (txFilter === 'received') filtered = txHistoryList.filter(t => t.type === 'received');
+
+      const totalPages = Math.ceil(filtered.length / TX_PAGE_SIZE) || 1;
+      if (txCurrentPage > totalPages) txCurrentPage = totalPages;
+      if (txCurrentPage < 1) txCurrentPage = 1;
+
+      const startIdx = (txCurrentPage - 1) * TX_PAGE_SIZE;
+      const endIdx = Math.min(startIdx + TX_PAGE_SIZE, filtered.length);
+      const pageItems = filtered.slice(startIdx, endIdx);
+
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (pageItems.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+              No ${txFilter === 'all' ? '' : txFilter} transactions recorded yet.
+            </td>
+          </tr>
+        `;
+      } else {
+        pageItems.forEach(item => {
+          const tr = document.createElement('tr');
+          const isSent = item.type === 'sent';
+          const typeBadge = isSent 
+            ? `<span class="badge" style="background:#000; color:#fff; border-color:#000; font-size:0.65rem;">↗ SENT</span>`
+            : `<span class="badge" style="background:var(--bg-subtle); color:var(--text-main); font-size:0.65rem;">↙ RECV</span>`;
+          
+          const shortTxID = item.txID.length > 14 
+            ? item.txID.substring(0, 8) + '...' + item.txID.substring(item.txID.length - 4)
+            : item.txID;
+
+          tr.innerHTML = `
+            <td>${typeBadge}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.75rem;" title="${item.txID}">
+              ${shortTxID} <button class="btn-icon btn-copy-txid" data-tx="${item.txID}" style="padding:0.15rem 0.4rem; font-size:0.68rem;">Copy</button>
+            </td>
+            <td style="font-family: var(--font-mono); font-size: 0.75rem; word-break: break-all;">${item.address}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.78rem; font-weight: bold;">${item.amountSikka} SIKKA</td>
+            <td style="font-size: 0.72rem; color: var(--text-muted);">${item.timestamp}</td>
+            <td><span class="badge" style="font-size:0.65rem;">${item.status || 'Confirmed'}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('.btn-copy-txid').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const tx = btn.getAttribute('data-tx');
+            if (tx) {
+              navigator.clipboard.writeText(tx);
+              alert(`TxID copied to clipboard:\n${tx}`);
+            }
+          });
+        });
+      }
+
+      const pageInfo = document.getElementById('historyPageInfo');
+      if (pageInfo) {
+        if (filtered.length === 0) {
+          pageInfo.textContent = `0 transactions`;
+        } else {
+          pageInfo.textContent = `Showing ${startIdx + 1}-${endIdx} of ${filtered.length} (Page ${txCurrentPage} of ${totalPages})`;
+        }
+      }
+
+      const btnPrev = document.getElementById('btnHistoryPrev');
+      const btnNext = document.getElementById('btnHistoryNext');
+      if (btnPrev) btnPrev.disabled = txCurrentPage <= 1;
+      if (btnNext) btnNext.disabled = txCurrentPage >= totalPages;
     }
 
     async function populateAddressExplorer() {
@@ -1522,13 +1724,24 @@
       });
 
       // Address Explorer Sub-Tab Listeners
-      document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+      document.querySelectorAll('.sub-tab-btn:not(.sub-tab-tx)').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.sub-tab-btn:not(.sub-tab-tx)').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           addressSubTab = btn.getAttribute('data-filter') || 'unused';
           addressCurrentPage = 1;
           renderAddressTable();
+        });
+      });
+
+      // Transaction History Sub-Tab Listeners
+      document.querySelectorAll('.sub-tab-tx').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.sub-tab-tx').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          txFilter = btn.getAttribute('data-txfilter') || 'all';
+          txCurrentPage = 1;
+          renderHistoryTable();
         });
       });
 
@@ -1543,6 +1756,33 @@
       document.getElementById('btnAddressNext')?.addEventListener('click', () => {
         addressCurrentPage++;
         renderAddressTable();
+      });
+
+      // Transaction History Pagination Controls
+      document.getElementById('btnHistoryPrev')?.addEventListener('click', () => {
+        if (txCurrentPage > 1) {
+          txCurrentPage--;
+          renderHistoryTable();
+        }
+      });
+
+      document.getElementById('btnHistoryNext')?.addEventListener('click', () => {
+        txCurrentPage++;
+        renderHistoryTable();
+      });
+
+      // History Refresh & Clear Buttons
+      document.getElementById('btnRefreshHistory')?.addEventListener('click', () => {
+        loadAndRenderHistory();
+      });
+
+      document.getElementById('btnClearHistory')?.addEventListener('click', () => {
+        if (confirm("Are you sure you want to clear your local transaction history?")) {
+          localStorage.removeItem('sikka_tx_history');
+          txHistoryList = [];
+          renderHistoryTable();
+          log("Local transaction history cleared.");
+        }
       });
 
       // Log Controls
@@ -1629,6 +1869,7 @@
         updateQRCode(primaryAddr);
         renderMnemonicGrid(activeHDWallet.mnemonic);
         await populateAddressExplorer();
+        await loadAndRenderHistory();
 
         log(`Wallet Active (${getHostFromURL(currentNodeURL)}). Address: ${primaryAddr}`);
         refreshBalance().catch(e => log("Balance refresh note: " + e.message));
@@ -1716,7 +1957,17 @@
         powProgressBar.style.width = '100%';
         powStatusText.textContent = '✅ Transaction Broadcast Successfully!';
         log(`Transaction Success! TxID: ${result.txID}`);
-        
+
+        saveTxHistoryItem({
+          txID: result.txID || ('tx_' + Math.random().toString(36).substring(2, 9)),
+          type: 'sent',
+          address: recipient,
+          amountSikka: amountStr,
+          amountChillar: amountChillar.toString(),
+          timestamp: new Date().toLocaleString(),
+          status: 'Confirmed'
+        });
+
         alert(`Transaction Sent Successfully!\nTxID: ${result.txID}`);
         await refreshBalance();
       } catch (err) {
