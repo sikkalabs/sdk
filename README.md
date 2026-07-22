@@ -1,4 +1,4 @@
-# ⚡ Sikka JavaScript & Browser SDK (`sdk`)
+# ⚡ Sikka JavaScript & Browser SDK (`@sikkalabs/sdk`)
 
 A lightweight, zero-dependency, post-quantum JavaScript SDK for the **Sikka** blockchain network. Built for modern Web browsers and Node.js environments.
 
@@ -25,11 +25,8 @@ Provides full wallet management, 24-word BIP-39 mnemonic seed phrases, Hierarchi
 Install directly via `npm`, `yarn`, `pnpm`, or `bun`:
 
 ```bash
-# Install latest main branch:
-npm install sikkalabs/sdk
-
-# Install specific release tag / version:
-npm install sikkalabs/sdk#v0.0.1
+# Install package from npm:
+npm install @sikkalabs/sdk
 ```
 
 ---
@@ -38,7 +35,7 @@ npm install sikkalabs/sdk#v0.0.1
 
 ### Step 1: Create an All-in-One HD Wallet
 ```javascript
-import { createHDWallet } from 'sdk';
+import { createHDWallet } from '@sikkalabs/sdk';
 
 // 1. Create HD wallet (Generates a 24-word seed phrase if none provided)
 const wallet = await createHDWallet({
@@ -60,7 +57,7 @@ const { txID, sentAmount, changeAddress } = await wallet.send(500000n, "sikka1..
 
 ### Step 2: Initialize the Client
 ```javascript
-import { SikkaClient } from 'sdk';
+import { SikkaClient } from '@sikkalabs/sdk';
 
 const client = new SikkaClient({
   nodeURL: 'https://1.sikkalabs.com', // Default public node
@@ -70,7 +67,7 @@ const client = new SikkaClient({
 
 ### Step 3: Check Your Balance
 ```javascript
-// Amount is returned in "chillar" (1 Sikka = 1,000,000 chillar)
+// Amount is returned in "chillar" (1 Sikka = 10,000,000,000 chillar)
 const balance = await client.balance();
 console.log(`Current Balance: ${balance} chillar`);
 ```
@@ -103,7 +100,7 @@ import {
   generateMnemonic, 
   validateMnemonic, 
   createWalletFromMnemonic 
-} from 'sdk';
+} from '@sikkalabs/sdk';
 
 // Generate 256-bit entropy (24 words)
 const mnemonic = generateMnemonic(256);
@@ -132,7 +129,7 @@ Derive multiple deterministic child wallets from a single master seed using Sikk
 import { 
   seedFromMnemonic, 
   createWalletFromPath 
-} from 'sdk';
+} from '@sikkalabs/sdk';
 
 // 1. Derive 32-byte master seed from mnemonic
 const masterSeed = seedFromMnemonic(mnemonic, "optional-passphrase");
@@ -155,7 +152,7 @@ console.log("Change Address #0:", change0.address);
 ### 3. Hex Seed Restoration & Brain Wallets
 
 ```javascript
-import { createWallet, createBrainWallet } from 'sdk';
+import { createWallet, createBrainWallet } from '@sikkalabs/sdk';
 
 // Restore directly from a 32-byte (64 hex characters) seed
 const restoredWallet = await createWallet("c279e8a75d507117...");
@@ -194,7 +191,7 @@ When integrating `sdk` into Web Browser UIs (React, Vue, Svelte, Vanilla JS), he
 
 ```javascript
 // worker.js
-import { SikkaClient, createWalletFromMnemonic } from 'sdk';
+import { SikkaClient, createWalletFromMnemonic } from '@sikkalabs/sdk';
 
 self.onmessage = async (e) => {
   const { mnemonic, recipient, amount } = e.data;
