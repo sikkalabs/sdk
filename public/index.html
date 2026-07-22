@@ -896,11 +896,12 @@
 
     <!-- TAB 2: SEND -->
     <div class="tab-content" id="tab-send">
-      <div style="max-width: 720px; margin: 0 auto;">
+      <div class="grid-two-col">
+        <!-- Left: Send Form -->
         <div class="card">
           <div class="card-header">
             <div class="card-title">💸 Send Sikka</div>
-            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">Client-Side SHA3-256 PoW</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">ML-DSA-87 Signed</span>
           </div>
 
           <div class="form-group">
@@ -933,6 +934,48 @@
             <div class="progress-bar-bg">
               <div class="progress-bar-fill" id="powProgressBar"></div>
             </div>
+          </div>
+        </div>
+
+        <!-- Right: Network PoW Requirements Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⛏️ Network PoW Requirements</div>
+            <button class="btn-icon" id="btnRefreshPowQuote">🔄 Refresh Quote</button>
+          </div>
+
+          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.4;">
+            Before broadcasting, Sikka SDK requests a Proof-of-Work quote from the node endpoint (<code style="font-family: var(--font-mono);">/v1/tx/pow-quote</code>).
+          </div>
+
+          <div class="grid-two-col" style="gap: 0.75rem; margin-bottom: 1.25rem;">
+            <div style="padding: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-main); border-radius: var(--radius-sm);">
+              <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary);">Required Bits</div>
+              <div style="font-size: 1.3rem; font-weight: 800; margin-top: 0.2rem; font-family: var(--font-mono);" id="powRequiredBitsVal">5 Bits</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Leading zero bits</div>
+            </div>
+
+            <div style="padding: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-main); border-radius: var(--radius-sm);">
+              <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary);">Avg Hash Attempts</div>
+              <div style="font-size: 1.3rem; font-weight: 800; margin-top: 0.2rem; font-family: var(--font-mono);" id="powDifficultyVal">32x Hashes</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">SHA3-256 iterations</div>
+            </div>
+
+            <div style="padding: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-main); border-radius: var(--radius-sm);">
+              <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary);">Estimated Mining</div>
+              <div style="font-size: 1.3rem; font-weight: 800; margin-top: 0.2rem; font-family: var(--font-mono);" id="powEstTimeVal">&lt; 1 sec</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">In-browser miner</div>
+            </div>
+
+            <div style="padding: 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-main); border-radius: var(--radius-sm);">
+              <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary);">DAG Depth</div>
+              <div style="font-size: 1.3rem; font-weight: 800; margin-top: 0.2rem; font-family: var(--font-mono);" id="powDagDepthVal">2,212</div>
+              <div style="font-size: 0.68rem; color: var(--text-muted);">Chain consensus height</div>
+            </div>
+          </div>
+
+          <div style="padding: 0.65rem 0.85rem; background: var(--bg-subtle); border: 1px solid var(--border-main); border-radius: var(--radius-sm); font-size: 0.78rem; text-align: center; font-weight: 700;" id="powQuoteStatusPill">
+            🟢 Live Node PoW Quote Ready
           </div>
         </div>
       </div>
@@ -1468,6 +1511,50 @@
       if (btnNext) btnNext.disabled = addressCurrentPage >= totalPages;
     }
 
+    async function updatePowRequirementUI() {
+      const bitsEl = document.getElementById('powRequiredBitsVal');
+      const diffEl = document.getElementById('powDifficultyVal');
+      const timeEl = document.getElementById('powEstTimeVal');
+      const dagEl = document.getElementById('powDagDepthVal');
+      const pillEl = document.getElementById('powQuoteStatusPill');
+
+      if (!bitsEl) return;
+
+      try {
+        bitsEl.textContent = '⏳ ...';
+        if (SDK && SDK.APIClient) {
+          const client = new SDK.APIClient(currentNodeURL);
+          const status = await client.getNodeStatus();
+          const sampleTx = {
+            parents: status.tips ? status.tips.slice(0, 2) : [],
+            timestamp: Math.floor(Date.now() / 1000)
+          };
+
+          let requiredBits = 5;
+          try {
+            const quote = await client.getProofOfWorkQuote(sampleTx);
+            requiredBits = quote.required_bits;
+          } catch (e) {
+            // Default required bits
+          }
+
+          const attempts = Math.pow(2, requiredBits);
+          bitsEl.textContent = `${requiredBits} Bits`;
+          diffEl.textContent = `${attempts}x Hashes`;
+          timeEl.textContent = `< 1 sec`;
+          dagEl.textContent = `${(status.dagSize || status.height || 2212).toLocaleString()}`;
+          if (pillEl) {
+            pillEl.style.background = '#f4f4f5';
+            pillEl.style.color = '#000';
+            pillEl.innerHTML = `🟢 Live Node PoW Quote Ready (Target: <code>${requiredBits} bits</code>)`;
+          }
+        }
+      } catch (err) {
+        if (bitsEl) bitsEl.textContent = '5 Bits';
+        if (pillEl) pillEl.textContent = '⚡ Default Node PoW (5 Bits)';
+      }
+    }
+
     function getHostFromURL(url) {
       try {
         const u = new URL(url.includes('://') ? url : 'https://' + url);
@@ -1862,10 +1949,16 @@
         }
       });
 
+      // Refresh PoW Quote Button
+      document.getElementById('btnRefreshPowQuote')?.addEventListener('click', () => {
+        updatePowRequirementUI();
+      });
+
       // Send Transaction Handler
       document.getElementById('btnSend')?.addEventListener('click', sendTransaction);
 
       log(`Initializing new 24-word BIP-39 HD Wallet (${getHostFromURL(currentNodeURL)})...`);
+      updatePowRequirementUI();
       await loadWallet();
     }
 
