@@ -28,3 +28,41 @@ export function concatBytes(...arrays) {
   }
   return res;
 }
+
+export function selectUTXOs(utxos, targetAmount, strategy = 'fifo', maxInputs = 64) {
+  const target = BigInt(targetAmount);
+  if (!utxos || utxos.length === 0) {
+    return { selected: [], total: 0n, fee: 0n };
+  }
+
+  let candidates = [...utxos];
+
+  if (strategy === 'largest-first') {
+    candidates.sort((a, b) => (BigInt(b.value) > BigInt(a.value) ? 1 : -1));
+  } else if (strategy === 'smallest-first') {
+    candidates.sort((a, b) => (BigInt(a.value) > BigInt(b.value) ? 1 : -1));
+  } else if (strategy === 'optimal') {
+    // Look for exact match or single output with minimal excess
+    const singleBest = candidates
+      .filter(u => BigInt(u.value) >= target)
+      .sort((a, b) => (BigInt(a.value) > BigInt(b.value) ? 1 : -1))[0];
+    if (singleBest) {
+      return { selected: [singleBest], total: BigInt(singleBest.value) };
+    }
+    // Fallback to largest-first if no single UTXO is sufficient
+    candidates.sort((a, b) => (BigInt(b.value) > BigInt(a.value) ? 1 : -1));
+  }
+
+  const selected = [];
+  let total = 0n;
+
+  for (const utxo of candidates) {
+    selected.push(utxo);
+    total += BigInt(utxo.value);
+    if (total >= target) break;
+    if (selected.length >= maxInputs) break;
+  }
+
+  return { selected, total };
+}
+

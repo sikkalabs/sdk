@@ -2,7 +2,7 @@
 
 A lightweight, zero-dependency, post-quantum JavaScript SDK for the **Sikka** blockchain network. Built for modern Web browsers and Node.js environments.
 
-Provides full wallet management, 24-word BIP-39 mnemonic seed phrases, Hierarchical Deterministic (HD) address derivation, NIST ML-DSA-87 signatures, and automated Proof-of-Work (PoW) transaction mining.
+Provides full wallet management, 24-word BIP-39 mnemonic seed phrases, Hierarchical Deterministic (HD) address derivation, NIST ML-DSA-87 signatures, high-performance automated Proof-of-Work (PoW) transaction mining, and customizable UTXO selection strategies.
 
 ---
 
@@ -12,11 +12,13 @@ Provides full wallet management, 24-word BIP-39 mnemonic seed phrases, Hierarchi
 - **🔑 Complete Wallet Suite**: 
   - 12–24 word BIP-39 seed phrase generation & validation.
   - Hierarchical Deterministic (HD) path derivation (`account / branch / index`).
-  - Raw 32-byte hex seed restoration.
-  - Deterministic brain wallet creation.
-- **⚡ Automatic Proof-of-Work (PoW)**: Automatically fetches difficulty quotes from the node, mines SHA3-256 PoW nonces locally, and broadcasts transactions seamlessly.
-- **🌐 100% Browser & Node.js Compatible**: Uses standard Web Cryptography, `Uint8Array`, `DataView`, and native `fetch`. Zero legacy Node.js dependencies (no `Buffer` or `crypto` module required).
-- **🕸️ DAG Network Integration**: Automatic UTXO selection, DAG parent tip resolution, and transaction submission.
+  - Raw 32-byte hex seed restoration & deterministic brain wallets.
+- **⚡ High-Performance Proof-of-Work (PoW)**: Pre-allocated 104-byte buffer SHA3-256 PoW miner with zero runtime garbage collector allocations, `AbortSignal` cancellation support, and live progress callbacks.
+- **🧵 Web Worker Background Mining**: Dedicated Web Worker module (`src/pow.worker.js`) to offload heavy PoW computation off the main browser UI thread.
+- **📊 Advanced UTXO Selection**: Multiple selection strategies (`fifo`, `largest-first`, `smallest-first`, `optimal`).
+- **🚨 Strongly Typed Custom Errors**: Clear, actionable error classes (`InsufficientBalanceError`, `InvalidAddressError`, `InvalidMnemonicError`, `PoWTimeoutError`, `NetworkError`).
+- **📘 Native TypeScript Support**: Complete `.d.ts` declaration file included out of the box.
+- **🌐 100% Browser & Node.js Compatible**: Standard Web Cryptography, `Uint8Array`, `DataView`, and native `fetch`. Zero legacy Node.js dependencies.
 
 ---
 
@@ -29,7 +31,7 @@ Install directly via `npm`, `yarn`, `pnpm`, or `bun`:
 npm install sikkalabs/sdk
 
 # Or install a specific release tag / branch:
-npm install sikkalabs/sdk#0.0.1
+npm install sikkalabs/sdk#0.0.2
 ```
 
 ---
@@ -82,7 +84,9 @@ try {
   const amountToSend = 500000n; // 0.5 Sikka in chillar
 
   console.log("Mining Proof-of-Work and sending transaction...");
-  const { txID, sentAmount } = await client.send(amountToSend, recipientAddress);
+  const { txID, sentAmount } = await client.send(amountToSend, recipientAddress, {
+    strategy: 'largest-first' // Optional UTXO selection strategy
+  });
   
   console.log(`Successfully sent ${sentAmount} chillar! TxID: ${txID}`);
 } catch (error) {
@@ -92,9 +96,111 @@ try {
 
 ---
 
-## 📖 Deep Dive: Wallet Management
+## 📖 Deep Dive: Wallet & Transaction Capabilities
 
-### 1. Generating & Restoring 24-Word Seed Phrases (BIP-39)
+### 1. Advanced UTXO Selection Strategies
+
+Customize how unspent outputs are selected when constructing transactions:
+
+```javascript
+import { selectUTXOs } from '@sikkalabs/sdk';
+
+// Strategies available:
+// - 'fifo': First-in, first-out (Default)
+// - 'largest-first': Pick largest UTXOs first to minimize input size
+// - 'smallest-first': Consolidate small dust UTXOs into single change output
+// - 'optimal': Select single UTXO matching target amount, or fallback to largest-first
+
+const { selected, total } = selectUTXOs(utxoList, 500000n, 'largest-first');
+
+// Usage directly inside wallet.send or client.send:
+await wallet.send(500000n, recipientAddress, { strategy: 'optimal' });
+```
+
+---
+
+### 2. High-Performance PoW Engine & Cancellation (`AbortSignal`)
+
+PoW mining can be cancelled mid-operation (e.g. user navigation, transaction cancellation) and listened to via progress callbacks:
+
+```javascript
+const controller = new AbortController();
+
+// Cancel mining after 5 seconds
+setTimeout(() => controller.abort(), 5000);
+
+try {
+  await client.send(amount, recipient, {
+    signal: controller.signal,
+    onPoWProgress: ({ nonce, currentBits, minimumBits }) => {
+      console.log(`Mining... Nonce: ${nonce}, Bits: ${currentBits}/${minimumBits}`);
+    }
+  });
+} catch (err) {
+  if (err.name === 'AbortError') {
+    console.log("Transaction mining cancelled by user!");
+  }
+}
+```
+
+---
+
+### 3. Web Worker Background PoW Mining (`src/pow.worker.js`)
+
+Keep browser main UI thread responsive by running PoW mining in a background Web Worker:
+
+```javascript
+// Offload PoW to background worker
+const worker = new Worker(new URL('@sikkalabs/sdk/src/pow.worker.js', import.meta.url), { type: 'module' });
+
+worker.postMessage({
+  id: 'tx-123',
+  transaction: transactionObject,
+  minimumBits: 18
+});
+
+worker.onmessage = (e) => {
+  const { type, result, progress, error } = e.data;
+  if (type === 'progress') {
+    console.log("PoW progress:", progress);
+  } else if (type === 'success') {
+    console.log("PoW mined! Nonce:", result.nonce);
+  } else if (type === 'error') {
+    console.error("Worker PoW error:", error);
+  }
+};
+```
+
+---
+
+### 4. Strongly Typed Custom Error Handling
+
+The SDK provides specific error classes for clean error handling in applications:
+
+```javascript
+import { 
+  InsufficientBalanceError, 
+  InvalidAddressError, 
+  InvalidMnemonicError, 
+  NetworkError 
+} from '@sikkalabs/sdk';
+
+try {
+  await wallet.send(amount, recipient);
+} catch (err) {
+  if (err instanceof InsufficientBalanceError) {
+    console.error(`Required: ${err.required}, Available: ${err.available}`);
+  } else if (err instanceof InvalidAddressError) {
+    console.error(`Invalid address: ${err.address}`);
+  } else if (err instanceof NetworkError) {
+    console.error(`Network HTTP ${err.statusCode}: ${err.message}`);
+  }
+}
+```
+
+---
+
+### 5. Generating & Restoring 24-Word Seed Phrases (BIP-39)
 
 The Sikka protocol uses BIP-39 mnemonic phrases (12 to 24 words) combined with `HKDF-SHA3-256` key derivation.
 
@@ -121,7 +227,7 @@ if (validateMnemonic(mnemonic)) {
 
 ---
 
-### 2. Hierarchical Deterministic (HD) Child Wallets
+### 6. Hierarchical Deterministic (HD) Child Wallets
 
 Derive multiple deterministic child wallets from a single master seed using Sikka's HD derivation rule (`account / branch / index`):
 
@@ -152,21 +258,6 @@ console.log("Change Address #0:", change0.address);
 
 ---
 
-### 3. Hex Seed Restoration & Brain Wallets
-
-```javascript
-import { createWallet, createBrainWallet } from '@sikkalabs/sdk';
-
-// Restore directly from a 32-byte (64 hex characters) seed
-const restoredWallet = await createWallet("c279e8a75d507117...");
-
-// Create a deterministic brain wallet from any arbitrary passphrase
-const brainWallet = await createBrainWallet("username:secret-phrase-123");
-console.log("Brain Wallet Address:", brainWallet.address);
-```
-
----
-
 ## 🔬 Sikka Cryptography & Architecture Explained
 
 ### Post-Quantum Signatures (ML-DSA-87)
@@ -188,31 +279,11 @@ Transactions require client-side Proof-of-Work to prevent network spam:
 
 ---
 
-## 💡 Web Application Performance (Web Workers)
-
-When integrating `sdk` into Web Browser UIs (React, Vue, Svelte, Vanilla JS), heavy PoW mining can be offloaded to a **Web Worker** so the main UI thread never freezes.
-
-```javascript
-// worker.js
-import { SikkaClient, createWalletFromMnemonic } from '@sikkalabs/sdk';
-
-self.onmessage = async (e) => {
-  const { mnemonic, recipient, amount } = e.data;
-  const wallet = await createWalletFromMnemonic(mnemonic);
-  const client = new SikkaClient({ wallet });
-
-  const result = await client.send(amount, recipient);
-  self.postMessage({ success: true, result });
-};
-```
-
----
-
 ## 🌐 Web Wallet UI Example
 
-An interactive, post-quantum web wallet UI demo is included in [public/index.html](file:///home/jesus/Projects/sikkalabs/sdk/public/index.html).
+An interactive, post-quantum web wallet UI demo is included in [index.html](file:///home/jesus/Project/sikka/sdk/index.html).
 
-It loads the SDK directly from GitHub via `https://cdn.jsdelivr.net/gh/sikkalabs/sdk@main/src/index.js` or `https://esm.sh/gh/sikkalabs/sdk` and demonstrates:
+It loads the SDK directly and demonstrates:
 - 24-word seed generation & wallet restoration.
 - HD address derivation (`account/branch/index`).
 - Real-time balance queries across spendable UTXOs.
@@ -239,19 +310,21 @@ npm run serve
 | `createWalletFromPath()` | `fromPath()` / `walletFromPath()` | `Promise<Wallet>` | Derives HD child wallet for specified path. |
 | `createWallet(seedHex?)` | `wallet(seedHex?)` | `Promise<Wallet>` | Creates a wallet from a 32-byte hex seed or random entropy. |
 | `createBrainWallet(passphrase)` | `brainWallet(passphrase)` | `Promise<Wallet>` | Creates a wallet deterministically from any string. |
+| `selectUTXOs(utxos, target, strategy?)` | - | `{ selected, total }` | Selects UTXOs using specified strategy. |
 | `sikkaToChillar(sikka)` | `toChillar(sikka)` / `fromSikka(sikka)` | `bigint` | Converts Sikka amount to chillar (`1 Sikka = 10,000,000,000 chillar`). |
 | `chillarToSikka(chillar)` | `toSikka(chillar)` / `fromChillar(chillar)` | `string \| number` | Converts chillar amount to Sikka formatted string or float. |
 | `validateAddress(address)` | `isValidAddress(address)` | `string` | Validates a `sikka1...` Bech32m address string. |
 
-### `SikkaClient` Class
+### Error Classes
 
-```javascript
-const client = new SikkaClient({ nodeURL: 'https://1.sikkalabs.com', wallet });
-```
-
-- **`async balance(address?: string)`**: Queries balance in chillar for wallet or specified address.
-- **`async send(amount: bigint | number, recipientAddress: string)`**: Executes UTXO selection, requests PoW quote, mines PoW, signs inputs, and submits transaction. Returns `{ txID, sentAmount }`.
-- **`async pow(transaction, minimumBits)`**: Mines Proof-of-Work nonce directly on a transaction object.
+| Class | Base Class | Description |
+| :--- | :--- | :--- |
+| `SikkaError` | `Error` | Base error class for all SDK exceptions. |
+| `InsufficientBalanceError` | `SikkaError` | Thrown when UTXO balance is less than transaction send amount. |
+| `InvalidAddressError` | `SikkaError` | Thrown when Bech32m address fails validation or checksum. |
+| `InvalidMnemonicError` | `SikkaError` | Thrown when BIP-39 seed phrase validation fails. |
+| `NetworkError` | `SikkaError` | Thrown when HTTP network request to Sikka node fails. |
+| `PoWTimeoutError` | `SikkaError` | Thrown when PoW mining times out or exceeds max iterations. |
 
 ---
 

@@ -155,29 +155,106 @@ async function runTests() {
   console.log("   SikkaHDWallet Manager & Path Parsing: PASSED ✓");
 
   // ----------------------------------------------------
-  // 6. Live Network Integration Test (Optional)
+  // 6. UTXO Selection Strategy Tests
   // ----------------------------------------------------
-  console.log("\n6. Initializing Network Integration Wallet...");
+  console.log("\n6. Testing UTXO Selection Strategies...");
+  const mockUtxos = [
+    { txid: '01'.repeat(32), index: 0, value: 1000 },
+    { txid: '02'.repeat(32), index: 0, value: 5000 },
+    { txid: '03'.repeat(32), index: 0, value: 2000 },
+    { txid: '04'.repeat(32), index: 0, value: 10000 }
+  ];
+
+  if (sdk.selectUTXOs) {
+    const fifoRes = sdk.selectUTXOs(mockUtxos, 3000, 'fifo');
+    if (fifoRes.selected[0].value !== 1000 || fifoRes.selected[1].value !== 5000) {
+      throw new Error("FIFO selection failed");
+    }
+
+    const largestRes = sdk.selectUTXOs(mockUtxos, 3000, 'largest-first');
+    if (largestRes.selected[0].value !== 10000) {
+      throw new Error("Largest-first selection failed");
+    }
+
+    const smallestRes = sdk.selectUTXOs(mockUtxos, 3000, 'smallest-first');
+    if (smallestRes.selected[0].value !== 1000 || smallestRes.selected[1].value !== 2000) {
+      throw new Error("Smallest-first selection failed");
+    }
+
+    const optimalRes = sdk.selectUTXOs(mockUtxos, 5000, 'optimal');
+    if (optimalRes.selected.length !== 1 || optimalRes.selected[0].value !== 5000) {
+      throw new Error("Optimal selection failed");
+    }
+    console.log("   UTXO Selection (FIFO, Largest, Smallest, Optimal): PASSED ✓");
+  }
+
+  // ----------------------------------------------------
+  // 7. Optimized PoW Mining & Cancellation Tests
+  // ----------------------------------------------------
+  console.log("\n7. Testing Proof-of-Work Engine & AbortSignal...");
+  const powClient = new SikkaClient();
+  const dummyTx = {
+    parents: ['00'.repeat(32), '00'.repeat(32)],
+    inputs: [{ txid: '00'.repeat(32), index: 0 }],
+    outputs: [{ address: 'sikka1p4ktc4mcwzekfauhw2eeqfx5edeffaqtmcv3qaautjkrh55slgrmswvkjvf', value: 1000 }],
+    timestamp: 1700000000
+  };
+
+  const powResult = await powClient.pow(dummyTx, 4);
+  if (powResult.bits < 4 || dummyTx.pow_bits < 4) {
+    throw new Error("PoW mining failed to reach minimum target bits");
+  }
+  console.log(`   PoW Mined Nonce: ${powResult.nonce}, Target Bits: ${powResult.bits}`);
+
+  // Test AbortSignal Cancellation
+  const controller = new AbortController();
+  controller.abort();
+  try {
+    await powClient.pow(dummyTx, 16, { signal: controller.signal });
+    throw new Error("PoW should have aborted but completed!");
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      throw new Error(`Expected AbortError, got ${err.name}: ${err.message}`);
+    }
+  }
+  console.log("   PoW Cancellation (AbortSignal): PASSED ✓");
+
+  // ----------------------------------------------------
+  // 8. Custom Error Hierarchy Tests
+  // ----------------------------------------------------
+  console.log("\n8. Testing Custom Error Hierarchy...");
+  if (sdk.InsufficientBalanceError) {
+    const err = new sdk.InsufficientBalanceError(5000n, 1000n);
+    if (!(err instanceof sdk.SikkaError) || err.required !== 5000n || err.available !== 1000n) {
+      throw new Error("InsufficientBalanceError property check failed");
+    }
+    console.log("   Custom Error Classes: PASSED ✓");
+  }
+
+  // ----------------------------------------------------
+  // 9. Live Network Integration Test (Optional)
+  // ----------------------------------------------------
+  console.log("\n9. Initializing Network Integration Wallet...");
   const wallet = await fromMnemonic(generatedMnemonic);
   console.log("   Active Wallet Address:", wallet.address);
   console.log("   Active Public Key:    ", wallet.pubKeyHex);
 
-  const client = new SikkaClient({ wallet });
+  const netClient = new SikkaClient({ wallet });
 
-  console.log("\n7. Checking balance...");
+  console.log("\n10. Checking balance...");
   let balance = 0;
   try {
-    balance = await client.balance(wallet.address);
+    balance = await netClient.balance(wallet.address);
     console.log(`   Current balance: ${toSikka(balance)} Sikka (${balance} chillar)`);
   } catch (err) {
     console.log("   Balance check notice:", err.message);
   }
 
   if (balance > 0) {
-    console.log("\n8. Funds detected! Sending funds back to self...");
+    console.log("\n11. Funds detected! Sending funds back to self...");
     try {
       console.log(`   Sending ${toSikka(balance)} Sikka (${balance} chillar) to ${wallet.address}...`);
-      const result = await client.send(balance, wallet.address);
+      const result = await netClient.send(balance, wallet.address);
       console.log("   Transaction ID:", result.txID);
       console.log("   Sent Amount:   ", result.sentAmount.toString());
     } catch (err) {

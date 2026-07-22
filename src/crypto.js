@@ -165,7 +165,7 @@ export function calculateProofOfWorkHash(transaction) {
   }
 
   const nonceBuf = new Uint8Array(8);
-  new DataView(nonceBuf.buffer).setBigUint64(0, BigInt(transaction.pow_nonce), false);
+  new DataView(nonceBuf.buffer).setBigUint64(0, BigInt(transaction.pow_nonce || 0), false);
 
   const dataToHash = concatBytes(transactionIdBytes, parentPowHash0, parentPowHash1, nonceBuf);
   return sha3_256(dataToHash);
@@ -189,15 +189,61 @@ export function countLeadingZeroBits(buffer) {
   return count;
 }
 
-export async function mineProofOfWork(transaction, minimumBits) {
-  for (let nonce = 0n; ; nonce++) {
-    transaction.pow_nonce = Number(nonce);
-    const hash = calculateProofOfWorkHash(transaction);
+export async function mineProofOfWork(transaction, minimumBits, options = {}) {
+  const { signal, onProgress, maxIterations } = options;
+
+  const transactionIdBytes = computeTransactionIdBytes(transaction);
+
+  let parentPowHash0 = new Uint8Array(32);
+  let parentPowHash1 = new Uint8Array(32);
+
+  if (transaction.parent_pow_hashes && transaction.parent_pow_hashes.length >= 1) {
+    parentPowHash0 = hexToBytes(transaction.parent_pow_hashes[0]);
+  }
+  if (transaction.parent_pow_hashes && transaction.parent_pow_hashes.length >= 2) {
+    parentPowHash1 = hexToBytes(transaction.parent_pow_hashes[1]);
+  }
+
+  // Pre-allocate 104-byte buffer for zero-allocation hashing loop
+  const buffer = new Uint8Array(104);
+  buffer.set(transactionIdBytes, 0);
+  buffer.set(parentPowHash0, 32);
+  buffer.set(parentPowHash1, 64);
+  const view = new DataView(buffer.buffer);
+
+  let nonce = 0n;
+  const startNonce = BigInt(transaction.pow_nonce || 0);
+  if (startNonce > 0n) {
+    nonce = startNonce;
+  }
+
+  const progressInterval = 10000; // Notify or check abort signal every 10k iterations
+
+  while (true) {
+    if (signal && signal.aborted) {
+      const err = new Error("Proof-of-work mining cancelled");
+      err.name = "AbortError";
+      throw err;
+    }
+
+    if (maxIterations && nonce >= BigInt(maxIterations)) {
+      throw new Error(`Exceeded max PoW iterations (${maxIterations})`);
+    }
+
+    view.setBigUint64(96, nonce, false);
+    const hash = sha3_256(buffer);
     const leadingBits = countLeadingZeroBits(hash);
-    
+
     if (leadingBits >= minimumBits) {
+      transaction.pow_nonce = Number(nonce);
       transaction.pow_bits = leadingBits;
-      return;
+      return { nonce: Number(nonce), bits: leadingBits };
+    }
+
+    nonce++;
+
+    if (onProgress && (nonce % BigInt(progressInterval) === 0n)) {
+      onProgress({ nonce: Number(nonce), currentBits: leadingBits, minimumBits });
     }
   }
 }

@@ -24,6 +24,15 @@ import {
   CHILLAR_PER_SIKKA, 
   SIKKA_DECIMALS 
 } from './units.js';
+import { selectUTXOs } from './utils.js';
+import { 
+  SikkaError, 
+  InsufficientBalanceError, 
+  InvalidAddressError, 
+  InvalidMnemonicError, 
+  NetworkError, 
+  PoWTimeoutError 
+} from './errors.js';
 
 export { 
   APIClient,
@@ -44,7 +53,14 @@ export {
   fromChillar,
   fromSikka,
   CHILLAR_PER_SIKKA,
-  SIKKA_DECIMALS
+  SIKKA_DECIMALS,
+  selectUTXOs,
+  SikkaError,
+  InsufficientBalanceError,
+  InvalidAddressError,
+  InvalidMnemonicError,
+  NetworkError,
+  PoWTimeoutError
 };
 
 // Intuitive Shorthand Aliases
@@ -98,8 +114,8 @@ export class SikkaClient {
     return addressInfo.balance;
   }
 
-  async pow(transaction, minimumBits) {
-    return await mineProofOfWork(transaction, minimumBits);
+  async pow(transaction, minimumBits, options = {}) {
+    return await mineProofOfWork(transaction, minimumBits, options);
   }
 
   async getTransaction(txid) {
@@ -134,7 +150,7 @@ export class SikkaClient {
     return await this.api.getSyncTail(addresses, limit);
   }
 
-  async send(amount, recipientAddr) {
+  async send(amount, recipientAddr, options = {}) {
     if (!this.wallet) {
       throw new Error("Wallet must be set in SikkaClient to send transactions");
     }
@@ -143,25 +159,23 @@ export class SikkaClient {
     if (amount <= 0n) {
       throw new Error("Amount must be greater than 0");
     }
+
+    validateAddress(recipientAddr);
+
+    const { strategy = 'fifo', signal, onPoWProgress, maxInputs = MAX_TX_INPUTS } = options;
     
     const senderAddr = this.wallet.address;
     const addressInfo = await this.api.getAddressInfo(senderAddr);
     
     const currentBalance = BigInt(addressInfo.balance);
     if (currentBalance === 0n || !addressInfo.unspentOutputs || addressInfo.unspentOutputs.length === 0) {
-      throw new Error("Insufficient balance (no unspent outputs found)");
+      throw new InsufficientBalanceError(amount, 0n);
     }
     
-    const selectedUtxos = [];
-    let inputTotal = 0n;
-    for (const utxo of addressInfo.unspentOutputs) {
-      selectedUtxos.push(utxo);
-      inputTotal += BigInt(utxo.value);
-      if (inputTotal >= amount) break;
-    }
+    const { selected: selectedUtxos, total: inputTotal } = selectUTXOs(addressInfo.unspentOutputs, amount, strategy, maxInputs);
     
     if (inputTotal < amount) {
-      throw new Error("Insufficient balance to cover the exact send amount");
+      throw new InsufficientBalanceError(amount, inputTotal);
     }
     
     const latestTips = await this.api.getLatestTransactionTips();
@@ -200,7 +214,7 @@ export class SikkaClient {
     transaction.parent_pow_hashes = powQuote.parent_pow_hashes;
     
     // Mine Proof of Work
-    await this.pow(transaction, powQuote.required_bits);
+    await this.pow(transaction, powQuote.required_bits, { signal, onProgress: onPoWProgress });
     
     // Compute final Transaction ID
     const transactionIdBytes = computeTransactionIdBytes(transaction);

@@ -14,7 +14,8 @@ import {
   computeTransactionIdBytes 
 } from './crypto.js';
 import { validateAddress } from './bech32m.js';
-import { bytesToHex } from './utils.js';
+import { bytesToHex, selectUTXOs } from './utils.js';
+import { InsufficientBalanceError } from './errors.js';
 
 export const MIN_UTXO_MATURITY_SECONDS = 600;
 export const MAX_TX_INPUTS = 64;
@@ -368,7 +369,7 @@ export class SikkaHDWallet {
     return details.total;
   }
 
-  async send(amount, recipientAddr) {
+  async send(amount, recipientAddr, options = {}) {
     amount = BigInt(amount);
     if (amount <= 0n) {
       throw new Error("Amount must be greater than 0");
@@ -376,26 +377,22 @@ export class SikkaHDWallet {
 
     validateAddress(recipientAddr);
 
+    const { strategy = 'fifo', signal, onPoWProgress, maxInputs = MAX_TX_INPUTS } = options;
+
     const scan = await this.scanAddresses();
     const spendableUtxos = (scan.utxos || []).filter(u => !u.isImmature);
     if (!spendableUtxos || spendableUtxos.length === 0) {
-      throw new Error("Insufficient mature balance across HD wallet (no spendable outputs found - UTXOs require 10 minute maturity)");
+      throw new InsufficientBalanceError(amount, 0n);
     }
 
-    const selectedUtxos = [];
-    let inputTotal = 0n;
-    for (const utxo of spendableUtxos) {
-      selectedUtxos.push(utxo);
-      inputTotal += BigInt(utxo.value);
-      if (inputTotal >= amount) break;
-    }
+    const { selected: selectedUtxos, total: inputTotal } = selectUTXOs(spendableUtxos, amount, strategy, maxInputs);
 
     if (inputTotal < amount) {
-      throw new Error(`Insufficient balance across HD wallet. Have ${inputTotal}, need ${amount}`);
+      throw new InsufficientBalanceError(amount, inputTotal);
     }
 
-    if (selectedUtxos.length > MAX_TX_INPUTS) {
-      throw new Error(`Transaction exceeds maximum inputs limit of ${MAX_TX_INPUTS} (selected ${selectedUtxos.length})`);
+    if (selectedUtxos.length > maxInputs) {
+      throw new Error(`Transaction exceeds maximum inputs limit of ${maxInputs} (selected ${selectedUtxos.length})`);
     }
 
     const latestTips = await this.api.getLatestTransactionTips();
@@ -447,7 +444,7 @@ export class SikkaHDWallet {
     // Get Proof of Work Quote & Mine
     const powQuote = await this.api.getProofOfWorkQuote(transaction);
     transaction.parent_pow_hashes = powQuote.parent_pow_hashes;
-    await mineProofOfWork(transaction, powQuote.required_bits);
+    await mineProofOfWork(transaction, powQuote.required_bits, { signal, onProgress: onPoWProgress });
 
     // Compute Transaction ID & Submit
     const transactionIdBytes = computeTransactionIdBytes(transaction);
