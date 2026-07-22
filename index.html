@@ -744,6 +744,162 @@
       gap: 0.5rem;
       padding-top: 0.5rem;
     }
+
+    /* ==========================================================================
+       MOBILE RESPONSIVE ENHANCEMENTS
+       ========================================================================== */
+    @media (max-width: 768px) {
+      header {
+        padding: 1rem 1.25rem;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.85rem;
+      }
+
+      .brand {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .brand-title {
+        font-size: 1.15rem;
+      }
+
+      .header-badges {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+        padding-bottom: 0.2rem;
+        scrollbar-width: none;
+      }
+
+      .header-badges::-webkit-scrollbar {
+        display: none;
+      }
+
+      .tabs-wrapper {
+        padding: 0.5rem 1rem 0 1rem;
+      }
+
+      .tab-btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.8rem;
+        flex-shrink: 0;
+        min-height: 42px;
+      }
+
+      .main-content {
+        padding: 1.25rem 1rem;
+      }
+
+      .card {
+        padding: 1.15rem;
+        border-radius: var(--radius-md);
+        margin-bottom: 1.25rem;
+      }
+
+      .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.6rem;
+      }
+
+      .card-header .badge,
+      .card-header .btn-icon {
+        align-self: flex-start;
+      }
+
+      .hero-balance {
+        padding: 1.25rem;
+      }
+
+      .balance-amount {
+        font-size: 1.85rem;
+      }
+
+      .address-box {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.6rem;
+        text-align: center;
+      }
+
+      .address-text {
+        font-size: 0.75rem;
+      }
+
+      .sub-tabs-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 0.5rem;
+      }
+
+      .sub-tabs-nav {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;
+        width: 100%;
+        scrollbar-width: none;
+      }
+
+      .sub-tabs-nav::-webkit-scrollbar {
+        display: none;
+      }
+
+      .sub-tab-btn {
+        flex-shrink: 0;
+        white-space: nowrap;
+        min-height: 38px;
+      }
+
+      .address-table-wrapper {
+        -webkit-overflow-scrolling: touch;
+        margin-left: -0.25rem;
+        margin-right: -0.25rem;
+      }
+
+      .address-table,
+      .data-table {
+        min-width: 580px;
+      }
+
+      .form-control,
+      .form-textarea {
+        font-size: 16px; /* Prevents iOS auto-zoom on input focus */
+        padding: 0.75rem;
+      }
+
+      .button-group {
+        grid-template-columns: 1fr;
+      }
+
+      .pagination-bar {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        text-align: center;
+      }
+
+      .pagination-bar > div {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .mnemonic-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .preset-group {
+        flex-wrap: wrap;
+      }
+
+      .btn-preset {
+        min-width: 45%;
+      }
+    }
   </style>
 </head>
 <body>
