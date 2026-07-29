@@ -37,8 +37,10 @@ export {
 } from './utils.js';
 
 export {
-  deriveFalcon1024PublicKey,
-  signFalcon1024,
+  deriveMldsa87PublicKey,
+  deriveMldsa87KeyPair,
+  signMldsa87,
+  verifyMldsa87,
   deriveAddressFromSeed,
   derivePathSeed,
   computeTransactionIdBytes,
@@ -46,6 +48,14 @@ export {
   mineProofOfWork,
   generateSigningPayload,
   signTransactionInput,
+  SIGNING_DOMAIN,
+  MLDSA87_PUBLIC_KEY_BYTES,
+  MLDSA87_SECRET_KEY_BYTES,
+  MLDSA87_SIGNATURE_BYTES,
+  MLDSA87_SEED_BYTES,
+  // Deprecated backwards-compat aliases. New code should call the ML-DSA helpers above.
+  deriveFalcon1024PublicKey,
+  signFalcon1024,
 } from './crypto.js';
 
 export {

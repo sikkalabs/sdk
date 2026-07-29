@@ -1,7 +1,7 @@
 {
   "name": "@sikkalabs/sdk",
   "version": "0.1.0",
-  "description": "Enterprise JavaScript & TypeScript SDK for Sikka blockchain featuring Falcon-1024 post-quantum signatures, BIP-39 HD wallets, PrivateKey wallets, and simple UTXO management.",
+  "description": "Enterprise JavaScript & TypeScript SDK for Sikka blockchain featuring ML-DSA-87 (FIPS-204) post-quantum signatures, BIP-39 HD wallets, PrivateKey wallets, and simple UTXO management.",
   "main": "src/index.js",
   "types": "index.d.ts",
   "type": "module",
@@ -18,7 +18,9 @@
     "sikka",
     "sdk",
     "wallet",
-    "falcon-1024",
+    "ml-dsa",
+    "ml-dsa-87",
+    "fips-204",
     "bip39",
     "hd-wallet",
     "post-quantum",
@@ -27,6 +29,7 @@
   "author": "Sikka Labs",
   "license": "ISC",
   "dependencies": {
-    "@noble/hashes": "^2.2.0"
+    "@noble/hashes": "^2.2.0",
+    "@noble/post-quantum": "^0.6.1"
   }
 }

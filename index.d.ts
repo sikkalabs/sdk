@@ -186,12 +186,22 @@ declare module '@sikkalabs/sdk' {
   export function stringToBytes(str: string): Uint8Array;
   export function concatBytes(...arrays: Uint8Array[]): Uint8Array;
 
-  export function deriveFalcon1024PublicKey(seedBytes: Uint8Array): Uint8Array;
-  export function signFalcon1024(seedBytes: Uint8Array, payloadToSign: Uint8Array): Uint8Array;
+  export function deriveMldsa87PublicKey(seedBytes: Uint8Array): Uint8Array;
+  export function deriveMldsa87KeyPair(seedBytes: Uint8Array): {
+    publicKey: Uint8Array;
+    secretKey: Uint8Array;
+  };
+  export function signMldsa87(secretKey: Uint8Array, message: Uint8Array): Uint8Array;
+  export function verifyMldsa87(
+    signature: Uint8Array,
+    message: Uint8Array,
+    publicKey: Uint8Array
+  ): boolean;
   export function deriveAddressFromSeed(seedBytes: Uint8Array | string): {
     privateKeyHex: string;
     pubKeyHex: string;
     address: string;
+    secretKey: Uint8Array;
   };
   export function derivePathSeed(
     masterSeed: Uint8Array | string,
@@ -199,6 +209,20 @@ declare module '@sikkalabs/sdk' {
     branch?: number,
     index?: number
   ): Uint8Array;
+  export function generateSigningPayload(
+    transaction: any,
+    inputIndex: number,
+    unspentOutput: UTXO
+  ): Uint8Array;
+  export function signTransactionInput(
+    secretKeyOrSeed: Uint8Array | string,
+    payloadToSign: Uint8Array
+  ): string;
+  export const MLDSA87_PUBLIC_KEY_BYTES: number;
+  export const MLDSA87_SECRET_KEY_BYTES: number;
+  export const MLDSA87_SIGNATURE_BYTES: number;
+  export const MLDSA87_SEED_BYTES: number;
+  export const SIGNING_DOMAIN: string;
 
   export class SikkaError extends Error {}
   export class InsufficientBalanceError extends SikkaError {

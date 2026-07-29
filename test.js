@@ -35,7 +35,7 @@ async function runTestSuite() {
   const testPrivKey = '3a5cdae29fc5627c2b4d1915bf5535b25aff7ba0bf010613ae0c24867943921e';
   const privWallet = PrivateKeyWallet.fromPrivateKey(testPrivKey, { nodeURL: NODE_URL });
   assert.strictEqual(privWallet.privateKeyHex, testPrivKey, 'Private key must match input');
-  assert.strictEqual(privWallet.address, 'sikka1pvd6qz7r9asrkwysqflfdy0ddpf467az6q9kk0f5ahjjshe367z0sgzt59v', 'Address must be deterministic for raw seed');
+  assert.strictEqual(privWallet.address, 'sikka1plxg2v2um76tv08drv72ln4hg7rtgfstfsmzfw86ussmwz759uy5sjdd30d', 'Address must be deterministic for raw seed');
   assert.strictEqual(validateAddress(privWallet.address), privWallet.address, 'Address must be valid Bech32m');
 
   const randWallet = PrivateKeyWallet.createRandom({ nodeURL: NODE_URL });

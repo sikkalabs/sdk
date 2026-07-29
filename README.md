@@ -9,7 +9,7 @@ Enterprise-grade, post-quantum JavaScript SDK for the **Sikka** cryptocurrency n
 - **🔑 Two Dedicated Wallet Paradigms**:
   1. **`PrivateKeyWallet`**: Single-key seed/private key wallet for fast, lightweight key management.
   2. **`HDWallet`**: Full Hierarchical Deterministic wallet supporting 12/24-word BIP-39 mnemonics and account path derivation (`m/0/0/index`).
-- **🛡️ Post-Quantum Falcon-1024 Cryptography**: Quantum-resistant signatures and Bech32m address encoding (`sikka1...`).
+- **🛡️ Post-Quantum ML-DSA-87 (FIPS-204) Cryptography**: Quantum-resistant signatures and Bech32m address encoding (`sikka1...`).
 - **⚡ Automated Proof-of-Work Mining**: Dynamic PoW difficulty fetching and execution.
 - **📊 Simple & Robust UTXO Accumulator**: Efficient UTXO accumulator algorithm.
 - **📡 Latest Node REST & MCP API**: Support for all node endpoints including `/v1/history/{address}` and `/v1/nodes/register`.
@@ -48,7 +48,7 @@ console.log(`Balance: ${balance.sikka} SIKKA (${balance.chillar} Chillar)`);
 const history = await wallet.getHistory();
 console.log('Transaction History:', history);
 
-// Send transaction (Auto-selects UTXOs, signs with Falcon-1024, mines PoW, submits)
+// Send transaction (Auto-selects UTXOs, signs with ML-DSA-87, mines PoW, submits)
 const result = await wallet.sendTransaction({
   to: 'sikka1psauw25zn4zes585epa6z0y9lepw29eflfcy6vktxu8txrhvamsyq4y7zaf',
   amount: sikkaToChillar(1.5), // Send 1.5 SIKKA

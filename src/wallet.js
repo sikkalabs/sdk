@@ -5,7 +5,8 @@ import {
   signTransactionInput, 
   mineProofOfWork,
   computeTransactionIdBytes,
-  computeTxPowHash
+  computeTxPowHash,
+  MLDSA87_SEED_BYTES
 } from './crypto.js';
 import { validateAddress } from './bech32m.js';
 import { bytesToHex, selectUTXOs } from './utils.js';
@@ -16,21 +17,25 @@ export class PrivateKeyWallet {
     let seedBytes;
     if (privateKeyHex) {
       const cleanHex = privateKeyHex.trim();
-      if (cleanHex.length !== 64) {
+      if (cleanHex.length !== MLDSA87_SEED_BYTES * 2) {
         throw new Error(`Expected 32-byte seed (64 hex characters), got ${cleanHex.length}`);
       }
-      const raw = Array.from({ length: 32 }, (_, i) => parseInt(cleanHex.substring(i * 2, i * 2 + 2), 16));
+      const raw = Array.from({ length: MLDSA87_SEED_BYTES }, (_, i) => parseInt(cleanHex.substring(i * 2, i * 2 + 2), 16));
       seedBytes = new Uint8Array(raw);
     } else {
-      seedBytes = new Uint8Array(32);
+      seedBytes = new Uint8Array(MLDSA87_SEED_BYTES);
       crypto.getRandomValues(seedBytes);
     }
 
-    const { privateKeyHex: privHex, pubKeyHex, address } = deriveAddressFromSeed(seedBytes);
+    const { privateKeyHex: privHex, pubKeyHex, address, secretKey } = deriveAddressFromSeed(seedBytes);
     this.seedBytes = seedBytes;
     this.privateKeyHex = privHex;
     this.pubKeyHex = pubKeyHex;
     this.address = address;
+    // Cache the derived ML-DSA-87 secret key (4896 bytes) so signing does not
+    // need to re-run keygen on every input. Knightly zeroization of this field
+    // on wallet drop is the consumer's responsibility (it's a Uint8Array).
+    this.secretKey = secretKey;
 
     this.client = options.client || new SikkaClient({ nodeURL: options.nodeURL });
   }
@@ -124,7 +129,7 @@ export class PrivateKeyWallet {
       txid: utxo.txid,
       index: utxo.index,
       witness: {
-        type: 'falcon1024',
+        type: 'mldsa87',
         threshold: {
           threshold: 1,
           public_keys: [this.pubKeyHex],
@@ -151,7 +156,7 @@ export class PrivateKeyWallet {
 
     for (let i = 0; i < selected.length; i++) {
       const payload = generateSigningPayload(rawTx, i, selected[i]);
-      const signatureHex = signTransactionInput(this.seedBytes, payload);
+      const signatureHex = signTransactionInput(this.secretKey, payload);
       rawTx.inputs[i].witness.threshold.signatures = [signatureHex];
     }
 
