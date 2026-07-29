@@ -1,0 +1,32 @@
+{
+  "name": "@sikkalabs/sdk",
+  "version": "0.1.0",
+  "description": "Enterprise JavaScript & TypeScript SDK for Sikka blockchain featuring Falcon-1024 post-quantum signatures, BIP-39 HD wallets, PrivateKey wallets, and simple UTXO management.",
+  "main": "src/index.js",
+  "types": "index.d.ts",
+  "type": "module",
+  "scripts": {
+    "test": "node test.js",
+    "test:send": "node test-send.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sikkalabs/sikka.git",
+    "directory": "sdk"
+  },
+  "keywords": [
+    "sikka",
+    "sdk",
+    "wallet",
+    "falcon-1024",
+    "bip39",
+    "hd-wallet",
+    "post-quantum",
+    "cryptography"
+  ],
+  "author": "Sikka Labs",
+  "license": "ISC",
+  "dependencies": {
+    "@noble/hashes": "^2.2.0"
+  }
+}
