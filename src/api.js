@@ -83,6 +83,10 @@ export class SikkaClient {
     return await this.request(`/v1/history/${encodeURIComponent(address)}`);
   }
 
+  async getTransactionsByMemo(memo) {
+    return await this.request(`/v1/memo?memo=${encodeURIComponent(memo)}`);
+  }
+
   async getLatestSnapshot() {
     return await this.request('/v1/snapshot/latest');
   }

@@ -49,6 +49,13 @@ declare module '@sikkalabs/sdk' {
     count: number;
   }
 
+  export interface MemoTransactionsResponse {
+    status: string;
+    memo: string;
+    transactions: any[];
+    count: number;
+  }
+
   export interface TransactionSubmitResponse {
     status: string;
     txid: string;
@@ -79,6 +86,7 @@ declare module '@sikkalabs/sdk' {
     getTransaction(txId: string): Promise<{ status: string; transaction: any }>;
     getUTXOs(address: string): Promise<AddressUTXOsResponse>;
     getAddressHistory(address: string): Promise<AddressHistoryResponse>;
+    getTransactionsByMemo(memo: string): Promise<MemoTransactionsResponse>;
     getLatestSnapshot(): Promise<any>;
     getDiscoveryNodes(): Promise<{ items: Array<{ address: string; status: string }> }>;
     announceNode(address: string): Promise<any>;
