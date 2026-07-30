@@ -35,7 +35,7 @@ import { PrivateKeyWallet, sikkaToChillar } from '@sikkalabs/sdk';
 // Restore from 32-byte private key hex (or create random: PrivateKeyWallet.createRandom())
 const wallet = PrivateKeyWallet.fromPrivateKey(
   '3a5cdae29fc5627c2b4d1915bf5535b25aff7ba0bf010613ae0c24867943921e',
-  { nodeURL: 'http://127.0.0.1:64552' }
+  { nodeURL: 'https://1.sikkalabs.com' }
 );
 
 console.log('Wallet Address:', wallet.address);
@@ -60,7 +60,24 @@ console.log('Transaction Submitted! TxID:', result.txid);
 
 ---
 
-### 2. Using `HDWallet` (BIP-39 Mnemonic Wallet)
+### 2. Using Passphrase Wallet (`PrivateKeyWallet.fromPassphrase`)
+
+Create a deterministic wallet from any passphrase string of any length:
+
+```javascript
+import { PrivateKeyWallet, fromPassphrase } from '@sikkalabs/sdk';
+
+// Derive wallet from passphrase string of any length
+const wallet = PrivateKeyWallet.fromPassphrase('ANY STRING OF ANY LENGTH', { nodeURL: 'https://1.sikkalabs.com' });
+// Or standalone helper:
+// const wallet = fromPassphrase('ANY STRING OF ANY LENGTH');
+
+console.log('Passphrase Wallet Address:', wallet.address);
+```
+
+---
+
+### 3. Using `HDWallet` (BIP-39 Mnemonic Wallet)
 
 ```javascript
 import { HDWallet, sikkaToChillar } from '@sikkalabs/sdk';
@@ -68,7 +85,7 @@ import { HDWallet, sikkaToChillar } from '@sikkalabs/sdk';
 // Generate or restore 24-word HD wallet
 const wallet = HDWallet.fromMnemonic(
   'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
-  { nodeURL: 'http://127.0.0.1:64552' }
+  { nodeURL: 'https://1.sikkalabs.com' }
 );
 
 // Derive receive & change addresses
@@ -89,15 +106,18 @@ const txResult = await wallet.sendTransaction({
 
 ---
 
-### 3. Using `SikkaClient` (Low-Level RPC API)
+### 4. Using `SikkaClient` (Low-Level RPC API)
 
 ```javascript
 import { SikkaClient } from '@sikkalabs/sdk';
 
-const client = new SikkaClient({ nodeURL: 'http://127.0.0.1:64552' });
+const client = new SikkaClient({ nodeURL: 'https://1.sikkalabs.com' });
 
 // Node status & active tips
 const status = await client.getNodeStatus();
+
+// Query transactions by memo
+const memoTxs = await client.getTransactionsByMemo('Invoice #1042');
 
 // Address transaction history
 const history = await client.getAddressHistory('sikka1...');
