@@ -2,6 +2,7 @@ import assert from 'node:assert';
 import { 
   SikkaClient, 
   PrivateKeyWallet, 
+  fromPassphrase,
   HDWallet,
   generateMnemonic, 
   validateMnemonic, 
@@ -14,6 +15,38 @@ import {
 } from './src/index.js';
 
 const NODE_URL = process.env.NODE_URL || 'https://1.sikkalabs.com';
+
+export function testPassphraseWallet() {
+  console.log('\nTest: Passphrase Wallet Derivation (fromPassphrase)');
+  
+  // Test 1: Deterministic derivation from any string of any length
+  const phrase1 = "ANY STRING OF ANY LENGTH";
+  const w1 = PrivateKeyWallet.fromPassphrase(phrase1, { nodeURL: NODE_URL });
+  const w2 = fromPassphrase(phrase1, { nodeURL: NODE_URL });
+  assert.strictEqual(w1.address, w2.address, 'PrivateKeyWallet.fromPassphrase and fromPassphrase must return matching addresses');
+  assert.strictEqual(w1.privateKeyHex, w2.privateKeyHex, 'PrivateKeyWallet.fromPassphrase and fromPassphrase must return matching private keys');
+  assert.ok(w1.address.startsWith('sikka1'), 'Address must start with sikka1 hrp');
+
+  // Test 2: Different passphrases produce different wallets
+  const phrase2 = "A completely different passphrase string of arbitrary length 1234567890!";
+  const w3 = fromPassphrase(phrase2, { nodeURL: NODE_URL });
+  assert.notStrictEqual(w1.address, w3.address, 'Different passphrases must produce different addresses');
+
+  // Test 3: Short string
+  const wShort = fromPassphrase("a");
+  assert.ok(wShort.address.startsWith('sikka1'), 'Short passphrase must produce valid wallet');
+
+  // Test 4: Extremely long string
+  const wLong = fromPassphrase("x".repeat(10000));
+  assert.ok(wLong.address.startsWith('sikka1'), 'Very long passphrase must produce valid wallet');
+
+  // Test 5: Invalid non-string input throws TypeError
+  assert.throws(() => fromPassphrase(12345), TypeError, 'Non-string passphrase must throw TypeError');
+
+  console.log(`   ✅ Passphrase Derivation Tested: "${phrase1.slice(0, 20)}..." -> ${w1.address}`);
+  console.log('   ✅ Passed all passphrase wallet derivation tests');
+  return true;
+}
 
 async function runTestSuite() {
   console.log('⚡ Running Monorepo @sikkalabs/sdk Test Suite...\n');
@@ -41,6 +74,9 @@ async function runTestSuite() {
   const randWallet = PrivateKeyWallet.createRandom({ nodeURL: NODE_URL });
   assert.ok(randWallet.address.startsWith('sikka1'), 'Random wallet address must start with sikka1');
   console.log(`   ✅ PrivateKeyWallet Address: ${privWallet.address}`);
+
+  // Test Passphrase Wallet Derivation
+  testPassphraseWallet();
 
   // Test 3: HDWallet Mnemonic & Path Derivation
   console.log('\nTest 3: HDWallet Mnemonic & Account Derivation');

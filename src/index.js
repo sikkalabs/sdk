@@ -1,5 +1,5 @@
 export { SikkaClient, APIClient } from './api.js';
-export { PrivateKeyWallet } from './wallet.js';
+export { PrivateKeyWallet, fromPassphrase } from './wallet.js';
 export { HDWallet } from './hdwallet.js';
 
 export {

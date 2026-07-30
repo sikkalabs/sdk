@@ -126,6 +126,7 @@ declare module '@sikkalabs/sdk' {
 
     static createRandom(options?: WalletOptions): PrivateKeyWallet;
     static fromPrivateKey(privateKeyHex: string, options?: WalletOptions): PrivateKeyWallet;
+    static fromPassphrase(passphrase: string, options?: WalletOptions): PrivateKeyWallet;
 
     getBalance(): Promise<WalletBalance>;
     getUTXOs(): Promise<UTXO[]>;
@@ -170,6 +171,7 @@ declare module '@sikkalabs/sdk' {
   export function normalizeMnemonic(mnemonic: string): string;
   export function seedFromMnemonic(mnemonic: string, passphrase?: string): Uint8Array;
   export function mnemonicToSeedSync(mnemonic: string, passphrase?: string): Uint8Array;
+  export function fromPassphrase(passphrase: string, options?: WalletOptions): PrivateKeyWallet;
 
   export function encodeBech32m(hrp: string, version: number, program: Uint8Array): string;
   export function decodeBech32m(address: string): { hrp: string; version: number; program: Uint8Array };

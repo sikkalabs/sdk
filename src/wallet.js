@@ -1,3 +1,4 @@
+import { sha3_256 } from '@noble/hashes/sha3.js';
 import { SikkaClient } from './api.js';
 import { 
   deriveAddressFromSeed, 
@@ -9,7 +10,7 @@ import {
   MLDSA87_SEED_BYTES
 } from './crypto.js';
 import { validateAddress } from './bech32m.js';
-import { bytesToHex, selectUTXOs } from './utils.js';
+import { bytesToHex, selectUTXOs, stringToBytes } from './utils.js';
 import { chillarToSikka, sikkaToChillar } from './units.js';
 
 export class PrivateKeyWallet {
@@ -46,6 +47,19 @@ export class PrivateKeyWallet {
 
   static fromPrivateKey(privateKeyHex, options = {}) {
     return new PrivateKeyWallet(privateKeyHex, options);
+  }
+
+  static fromPassphrase(passphrase, options = {}) {
+    if (typeof passphrase !== 'string') {
+      throw new TypeError(`Passphrase must be a string, got ${typeof passphrase}`);
+    }
+    const seedBytes = sha3_256(stringToBytes(passphrase));
+    const privateKeyHex = bytesToHex(seedBytes);
+    return new PrivateKeyWallet(privateKeyHex, options);
+  }
+
+  static fromPassphare(passphrase, options = {}) {
+    return PrivateKeyWallet.fromPassphrase(passphrase, options);
   }
 
   async getBalance() {
@@ -177,3 +191,8 @@ export class PrivateKeyWallet {
     };
   }
 }
+
+export function fromPassphrase(passphrase, options = {}) {
+  return PrivateKeyWallet.fromPassphrase(passphrase, options);
+}
+

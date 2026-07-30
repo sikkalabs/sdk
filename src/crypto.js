@@ -320,7 +320,7 @@ export function mineProofOfWork(transaction, minimumBits = 0) {
     const leadingBits = countLeadingZeroBits(hash);
 
     if (leadingBits >= minimumBits) {
-      transaction.pow_nonce = nonce;
+      transaction.pow_nonce = Number(nonce);
       transaction.pow_bits = leadingBits;
       return { nonce, bits: leadingBits };
     }
