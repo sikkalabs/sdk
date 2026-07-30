@@ -13,7 +13,7 @@ import {
   selectUTXOs
 } from './src/index.js';
 
-const NODE_URL = process.env.NODE_URL || 'http://127.0.0.1:64552';
+const NODE_URL = process.env.NODE_URL || 'https://1.sikkalabs.com';
 
 async function runTestSuite() {
   console.log('⚡ Running Monorepo @sikkalabs/sdk Test Suite...\n');

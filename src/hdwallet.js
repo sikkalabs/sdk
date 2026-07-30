@@ -23,7 +23,7 @@ export class HDWallet {
 
     this.mnemonic = normalizedMnemonic;
     this.passphrase = passphrase;
-    this.client = client || new SikkaClient({ nodeURL: nodeURL || 'http://127.0.0.1:64552' });
+    this.client = client || new SikkaClient({ nodeURL: nodeURL || 'https://1.sikkalabs.com' });
 
     this.masterSeed = seedFromMnemonic(this.mnemonic, this.passphrase);
     this.masterSeedHex = bytesToHex(this.masterSeed);

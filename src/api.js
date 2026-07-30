@@ -1,7 +1,7 @@
 import { NetworkError } from './errors.js';
 
 export class SikkaClient {
-  constructor({ nodeURL = 'http://127.0.0.1:64552', timeout = 10000 } = {}) {
+  constructor({ nodeURL = 'https://1.sikkalabs.com', timeout = 10000 } = {}) {
     this.nodeURL = nodeURL.replace(/\/+$/, '');
     this.timeout = timeout;
   }
